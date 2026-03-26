@@ -1,0 +1,43 @@
+# .clang-format — Configuracao para projetos Arduino/ESP32
+# Evita que o formatador destrua macros, diretivas de preprocessador e
+# a estrutura tipica de sketches Arduino.
+
+BasedOnStyle: LLVM
+Language: Cpp
+
+# Indentacao
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+
+# Nao reformatar diretivas de preprocessador
+IndentPPDirectives: None
+SortIncludes: false
+
+# Limitar largura da linha (evita colar tudo numa linha so)
+ColumnLimit: 100
+
+# Chaves
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+
+# Espacamento
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: false
+SpacesInParentheses: false
+
+# Alinhamento
+AlignConsecutiveMacros: Consecutive
+AlignConsecutiveDeclarations: false
+AlignTrailingComments: true
+
+# Manter linhas em branco para legibilidade
+MaxEmptyLinesToKeep: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Ponteiros e referencias
+PointerAlignment: Right
+DerivePointerAlignment: false
