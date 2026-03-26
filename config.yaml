@@ -7,7 +7,7 @@
     "brightness": 48,
     "scroll_step_ms": 90,
     "message_pause_ms": 350,
-    "cat_frame_ms": 140,
+    "cat_frame_ms": 280,
     "cat_loops": 2
   },
   "messages": [

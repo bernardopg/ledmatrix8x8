@@ -17,7 +17,7 @@ struct ProjectMessage {
 static const uint8_t PROJECT_BRIGHTNESS = 48;
 static const uint16_t PROJECT_SCROLL_STEP_MS = 90;
 static const uint16_t PROJECT_MESSAGE_PAUSE_MS = 350;
-static const uint16_t PROJECT_CAT_FRAME_MS = 140;
+static const uint16_t PROJECT_CAT_FRAME_MS = 280;
 static const uint8_t PROJECT_CAT_LOOPS = 2;
 
 static const ProjectMessage PROJECT_MESSAGES[] = {

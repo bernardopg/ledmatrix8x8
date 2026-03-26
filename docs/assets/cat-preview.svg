@@ -1,0 +1,156 @@
+<svg width="1200" height="620" viewBox="0 0 1200 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A"/>
+      <stop offset="0.55" stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="120" y1="90" x2="1080" y2="540" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#1E293B" stop-opacity="0.88"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="1200" height="620" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="14" stdDeviation="22" flood-color="#020617" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="620" rx="32" fill="url(#bg)"/>
+  <circle cx="1040" cy="96" r="110" fill="#FFFFFF" fill-opacity="0.06"/>
+  <circle cx="186" cy="532" r="140" fill="#FFFFFF" fill-opacity="0.04"/>
+
+  <g filter="url(#shadow)">
+    <rect x="78" y="70" width="1044" height="480" rx="32" fill="url(#panel)" stroke="#475569" stroke-opacity="0.55" stroke-width="2"/>
+  </g>
+
+  <text x="128" y="142" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="700">Current Effect Preview</text>
+  <text x="128" y="184" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="24">A static cat-face badge running on ESP32-S3 with local importable effect libraries.</text>
+
+  <rect x="126" y="222" width="402" height="252" rx="28" fill="#020617" stroke="#334155" stroke-width="2"/>
+  <text x="154" y="262" fill="#94A3B8" font-family="Arial, Helvetica, sans-serif" font-size="22">8x8 matrix preview</text>
+
+  <g transform="translate(164 286)">
+    <g fill="#172033">
+      <rect x="0" y="0" width="34" height="34" rx="6"/>
+      <rect x="42" y="0" width="34" height="34" rx="6"/>
+      <rect x="84" y="0" width="34" height="34" rx="6"/>
+      <rect x="126" y="0" width="34" height="34" rx="6"/>
+      <rect x="168" y="0" width="34" height="34" rx="6"/>
+      <rect x="210" y="0" width="34" height="34" rx="6"/>
+      <rect x="252" y="0" width="34" height="34" rx="6"/>
+      <rect x="294" y="0" width="34" height="34" rx="6"/>
+      <rect x="0" y="42" width="34" height="34" rx="6"/>
+      <rect x="42" y="42" width="34" height="34" rx="6"/>
+      <rect x="84" y="42" width="34" height="34" rx="6"/>
+      <rect x="126" y="42" width="34" height="34" rx="6"/>
+      <rect x="168" y="42" width="34" height="34" rx="6"/>
+      <rect x="210" y="42" width="34" height="34" rx="6"/>
+      <rect x="252" y="42" width="34" height="34" rx="6"/>
+      <rect x="294" y="42" width="34" height="34" rx="6"/>
+      <rect x="0" y="84" width="34" height="34" rx="6"/>
+      <rect x="42" y="84" width="34" height="34" rx="6"/>
+      <rect x="84" y="84" width="34" height="34" rx="6"/>
+      <rect x="126" y="84" width="34" height="34" rx="6"/>
+      <rect x="168" y="84" width="34" height="34" rx="6"/>
+      <rect x="210" y="84" width="34" height="34" rx="6"/>
+      <rect x="252" y="84" width="34" height="34" rx="6"/>
+      <rect x="294" y="84" width="34" height="34" rx="6"/>
+      <rect x="0" y="126" width="34" height="34" rx="6"/>
+      <rect x="42" y="126" width="34" height="34" rx="6"/>
+      <rect x="84" y="126" width="34" height="34" rx="6"/>
+      <rect x="126" y="126" width="34" height="34" rx="6"/>
+      <rect x="168" y="126" width="34" height="34" rx="6"/>
+      <rect x="210" y="126" width="34" height="34" rx="6"/>
+      <rect x="252" y="126" width="34" height="34" rx="6"/>
+      <rect x="294" y="126" width="34" height="34" rx="6"/>
+      <rect x="0" y="168" width="34" height="34" rx="6"/>
+      <rect x="42" y="168" width="34" height="34" rx="6"/>
+      <rect x="84" y="168" width="34" height="34" rx="6"/>
+      <rect x="126" y="168" width="34" height="34" rx="6"/>
+      <rect x="168" y="168" width="34" height="34" rx="6"/>
+      <rect x="210" y="168" width="34" height="34" rx="6"/>
+      <rect x="252" y="168" width="34" height="34" rx="6"/>
+      <rect x="294" y="168" width="34" height="34" rx="6"/>
+      <rect x="0" y="210" width="34" height="34" rx="6"/>
+      <rect x="42" y="210" width="34" height="34" rx="6"/>
+      <rect x="84" y="210" width="34" height="34" rx="6"/>
+      <rect x="126" y="210" width="34" height="34" rx="6"/>
+      <rect x="168" y="210" width="34" height="34" rx="6"/>
+      <rect x="210" y="210" width="34" height="34" rx="6"/>
+      <rect x="252" y="210" width="34" height="34" rx="6"/>
+      <rect x="294" y="210" width="34" height="34" rx="6"/>
+    </g>
+
+    <g fill="#F59E0B">
+      <rect x="0" y="0" width="34" height="34" rx="6"/>
+      <rect x="294" y="0" width="34" height="34" rx="6"/>
+      <rect x="0" y="42" width="34" height="34" rx="6"/>
+      <rect x="42" y="42" width="34" height="34" rx="6"/>
+      <rect x="252" y="42" width="34" height="34" rx="6"/>
+      <rect x="294" y="42" width="34" height="34" rx="6"/>
+      <rect x="0" y="84" width="34" height="34" rx="6"/>
+      <rect x="42" y="84" width="34" height="34" rx="6"/>
+      <rect x="84" y="84" width="34" height="34" rx="6"/>
+      <rect x="126" y="84" width="34" height="34" rx="6"/>
+      <rect x="168" y="84" width="34" height="34" rx="6"/>
+      <rect x="210" y="84" width="34" height="34" rx="6"/>
+      <rect x="252" y="84" width="34" height="34" rx="6"/>
+      <rect x="294" y="84" width="34" height="34" rx="6"/>
+      <rect x="0" y="126" width="34" height="34" rx="6"/>
+      <rect x="42" y="126" width="34" height="34" rx="6"/>
+      <rect x="84" y="126" width="34" height="34" rx="6"/>
+      <rect x="126" y="126" width="34" height="34" rx="6"/>
+      <rect x="168" y="126" width="34" height="34" rx="6"/>
+      <rect x="210" y="126" width="34" height="34" rx="6"/>
+      <rect x="252" y="126" width="34" height="34" rx="6"/>
+      <rect x="294" y="126" width="34" height="34" rx="6"/>
+      <rect x="0" y="168" width="34" height="34" rx="6"/>
+      <rect x="42" y="168" width="34" height="34" rx="6"/>
+      <rect x="84" y="168" width="34" height="34" rx="6"/>
+      <rect x="126" y="168" width="34" height="34" rx="6"/>
+      <rect x="168" y="168" width="34" height="34" rx="6"/>
+      <rect x="210" y="168" width="34" height="34" rx="6"/>
+      <rect x="252" y="168" width="34" height="34" rx="6"/>
+      <rect x="294" y="168" width="34" height="34" rx="6"/>
+      <rect x="42" y="210" width="34" height="34" rx="6"/>
+      <rect x="84" y="210" width="34" height="34" rx="6"/>
+      <rect x="126" y="210" width="34" height="34" rx="6"/>
+      <rect x="168" y="210" width="34" height="34" rx="6"/>
+      <rect x="210" y="210" width="34" height="34" rx="6"/>
+      <rect x="252" y="210" width="34" height="34" rx="6"/>
+      <rect x="84" y="252" width="34" height="34" rx="6"/>
+      <rect x="126" y="252" width="34" height="34" rx="6"/>
+      <rect x="168" y="252" width="34" height="34" rx="6"/>
+      <rect x="210" y="252" width="34" height="34" rx="6"/>
+    </g>
+
+    <g fill="#1D4ED8">
+      <rect x="84" y="126" width="34" height="34" rx="6"/>
+      <rect x="210" y="126" width="34" height="34" rx="6"/>
+    </g>
+
+    <g fill="#94A3B8">
+      <rect x="126" y="168" width="34" height="34" rx="6"/>
+      <rect x="168" y="168" width="34" height="34" rx="6"/>
+      <rect x="84" y="210" width="34" height="34" rx="6"/>
+      <rect x="210" y="210" width="34" height="34" rx="6"/>
+    </g>
+  </g>
+
+  <g transform="translate(592 234)">
+    <rect x="0" y="0" width="462" height="224" rx="24" fill="#020617" fill-opacity="0.52" stroke="#475569" stroke-opacity="0.6"/>
+    <text x="32" y="54" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">Firmware snapshot</text>
+    <text x="32" y="94" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="22">Static cat-face effect</text>
+    <text x="32" y="128" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="22">Local importable effect libraries</text>
+    <text x="32" y="162" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="22">ESP32-S3 + WS2812B 8x8</text>
+    <text x="32" y="196" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="22">PlatformIO build and flash workflow</text>
+  </g>
+
+  <g transform="translate(594 126)">
+    <rect x="0" y="0" width="144" height="46" rx="23" fill="#1D4ED8"/>
+    <text x="72" y="30" text-anchor="middle" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Cat Face</text>
+    <rect x="158" y="0" width="154" height="46" rx="23" fill="#0F766E"/>
+    <text x="235" y="30" text-anchor="middle" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">ESP32-S3</text>
+    <rect x="326" y="0" width="180" height="46" rx="23" fill="#F59E0B"/>
+    <text x="416" y="30" text-anchor="middle" fill="#111827" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">8x8 NeoPixel</text>
+  </g>
+</svg>
