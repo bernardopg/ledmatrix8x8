@@ -37,6 +37,14 @@ class LedMatrixCore {
     pixels_.show();
   }
 
+  uint16_t width() const {
+    return width_;
+  }
+
+  uint16_t height() const {
+    return height_;
+  }
+
   uint32_t color(uint8_t red, uint8_t green, uint8_t blue) {
     return pixels_.gamma32(pixels_.Color(red, green, blue));
   }

@@ -68,6 +68,7 @@ def load_config() -> dict:
 def render_header(config: dict) -> str:
     display = config.get("display", {})
     messages = config.get("messages", [])
+    home_assistant = config.get("home_assistant", {})
 
     if not messages:
         messages = [{"text": "CONFIGURE UMA MENSAGEM", "color": [255, 255, 255]}]
@@ -77,6 +78,14 @@ def render_header(config: dict) -> str:
     message_pause_ms = clamp(int(display.get("message_pause_ms", 350)), 0, 4000)
     cat_frame_ms = clamp(int(display.get("cat_frame_ms", 140)), 40, 2000)
     cat_loops = clamp(int(display.get("cat_loops", 2)), 1, 20)
+    ha_poll_ms = clamp(int(home_assistant.get("poll_ms", 5000)), 1000, 60000)
+    ha_color = home_assistant.get("message_color", [0, 255, 160])
+    if not isinstance(ha_color, list) or len(ha_color) != 3:
+        ha_color = [0, 255, 160]
+
+    ha_red = clamp(int(ha_color[0]), 0, 255)
+    ha_green = clamp(int(ha_color[1]), 0, 255)
+    ha_blue = clamp(int(ha_color[2]), 0, 255)
 
     rendered_messages = []
     for item in messages:
@@ -105,20 +114,19 @@ def render_header(config: dict) -> str:
 
 #include <Arduino.h>
 
-struct ProjectMessage {{
-  const char *text;
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
-}};
+#include <LedMatrixTextTypes.h>
 
 static const uint8_t PROJECT_BRIGHTNESS = {brightness};
 static const uint16_t PROJECT_SCROLL_STEP_MS = {scroll_step_ms};
 static const uint16_t PROJECT_MESSAGE_PAUSE_MS = {message_pause_ms};
 static const uint16_t PROJECT_CAT_FRAME_MS = {cat_frame_ms};
 static const uint8_t PROJECT_CAT_LOOPS = {cat_loops};
+static const uint32_t PROJECT_HA_POLL_MS = {ha_poll_ms};
+static const uint8_t PROJECT_HA_COLOR_RED = {ha_red};
+static const uint8_t PROJECT_HA_COLOR_GREEN = {ha_green};
+static const uint8_t PROJECT_HA_COLOR_BLUE = {ha_blue};
 
-static const ProjectMessage PROJECT_MESSAGES[] = {{
+static const LedMatrixTextMessage PROJECT_MESSAGES[] = {{
 {messages_block}
 }};
 

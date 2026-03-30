@@ -10,9 +10,13 @@
     "cat_frame_ms": 280,
     "cat_loops": 2
   },
+  "home_assistant": {
+    "poll_ms": 5000,
+    "message_color": [0, 255, 160]
+  },
   "messages": [
     {
-      "text": "Foco na entrega",
+      "text": "Olá, eu sou o Klein, seu gato assistente virtual",
       "color": [255, 140, 0]
     },
     {

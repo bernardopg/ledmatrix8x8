@@ -26,6 +26,7 @@ Um display 8x8 e extremamente limitado. Se o firmware for pensado apenas como de
 - Header gerado para manter build simples no microcontrolador
 - Comandos serial para override rapido
 - Animacao de gato como camada de personalidade e estado idle
+- Integracao opcional com Home Assistant via REST para override remoto
 
 ## Nao objetivos por enquanto
 
@@ -62,25 +63,24 @@ Motivo:
 
 `ledmatrix8x8_app.h` faz:
 
-- scroll de texto 5x7
-- animacao do gato
-- parser de comandos serial
-- loop de playback com modos `AUTO`, `TEXT` e `CAT`
+- loop de playback entre gato e letreiro
+- injeta mensagens geradas a partir de `config.yaml`
+- inicializa o runtime da matriz e o efeito ativo
 
 ## Requisitos operacionais
 
 - textos curtos e legiveis
-- sem dependencia de rede no firmware
-- feedback imediato via Serial
+- rede opcional e degradacao limpa quando Home Assistant nao estiver configurado
+- feedback imediato via Serial para diagnostico
 - upload rapido com PlatformIO
 
 ## Roadmap util
 
 ### Curto prazo
 
-- script local para mandar `TEXT:` para a serial
 - suporte a mais sprites
 - presets de mensagem por contexto
+- script local para mandar `TEXT:` para a serial com mais ergonomia
 
 ### Medio prazo
 

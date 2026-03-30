@@ -28,13 +28,13 @@
 
 ## PT-BR
 
-`ledmatrix8x8` é um badge/painel NeoPixel 8x8 baseado em `ESP32-S3`, pensado para virar uma base de efeitos visuais importáveis. O firmware carregado no dispositivo hoje mostra um rosto de gato estático com identidade própria, mas a arquitetura foi organizada para permitir trocar o comportamento com baixo atrito: um núcleo da matriz, uma interface de efeitos e efeitos separados como biblioteca local.
+`ledmatrix8x8` é um badge/painel NeoPixel 8x8 baseado em `ESP32-S3`, pensado para virar uma base de efeitos visuais importáveis. O firmware agora alterna entre o rosto do gato e um letreiro 5x7 com mensagens configuraveis, mantendo a arquitetura separada em nucleo da matriz, interface de efeitos e bibliotecas locais reaproveitaveis.
 
 O objetivo deixou de ser “um sketch de teste” e passou a ser um artefato de hardware pequeno, visualmente marcante e com código reaproveitável.
 
 ## English
 
-`ledmatrix8x8` is an `ESP32-S3` NeoPixel 8x8 badge built around reusable visual effects. The device currently runs a cat-face effect, while the codebase is organized as a small importable firmware stack: matrix core, effect interface, and swappable local effects.
+`ledmatrix8x8` is an `ESP32-S3` NeoPixel 8x8 badge built around reusable visual effects. The device now alternates between a cat-face effect and a configurable 5x7 scrolling marquee, while the codebase stays organized as a small importable firmware stack: matrix core, effect interface, and swappable local libraries.
 
 The goal is no longer a throwaway test sketch. It is now a compact hardware artifact with stronger visual direction and a reusable firmware structure.
 
@@ -48,7 +48,7 @@ The goal is no longer a throwaway test sketch. It is now a compact hardware arti
 
 | Item | Status |
 | --- | --- |
-| Current deployed effect | Static cat face |
+| Current deployed effect | Cat face + scrolling text |
 | Device target | `ESP32-S3-DevKitC-1` |
 | LED matrix | `WS2812B 8x8` |
 | Data pin | `GPIO38` |
@@ -64,8 +64,10 @@ flowchart LR
   C --> D["ledmatrix8x8_app.h"]
   E["LedMatrixCore"] --> D
   F["LedMatrixEffect"] --> G["CatAnimationEffect"]
-  G --> D
-  D --> H["ESP32-S3 + WS2812B 8x8"]
+  H["LedMatrixText"] --> I["CatMessagePlaybackEffect"]
+  G --> I
+  I --> D
+  D --> J["ESP32-S3 + WS2812B 8x8"]
 ```
 
 ## Project Chart
@@ -85,7 +87,9 @@ pie showData title Current project emphasis
 | App | `ledmatrix8x8_app.h` | Wires the selected effect into the runtime |
 | Core | `lib/LedMatrixCore/src/LedMatrixCore.h` | Matrix abstraction, coordinates, color, draw helpers |
 | Effect contract | `lib/LedMatrixEffects/src/LedMatrixEffect.h` | Common interface for importable effects |
-| Effect | `lib/LedMatrixEffects/src/CatAnimation.h` | Current cat-face effect |
+| Cat effect | `lib/LedMatrixEffects/src/CatAnimation.h` | Pixel cat animation library |
+| Text lib | `lib/LedMatrixText/src/TextMarquee.h` | 5x7 sprite marquee with editable message text |
+| Playback effect | `lib/LedMatrixEffects/src/CatMessagePlayback.h` | Alternates cat idle and scrolling messages |
 | Generated config | `generated/project_content.h` | Build-time constants generated from config |
 | Content source | `config.yaml` | Human-edited project config |
 
@@ -93,7 +97,8 @@ pie showData title Current project emphasis
 
 - The firmware is now structured to swap effects without rewriting the whole project.
 - The matrix core can be reused by text effects, status indicators, or future animations.
-- The current cat effect gives the badge a visual identity instead of looking like a generic LED test.
+- The cat effect gives the badge a visual identity instead of looking like a generic LED test.
+- The text marquee turns the badge into a practical display for short messages and status lines.
 - The repo is ready to grow into multiple behaviors rather than a single monolithic sketch.
 
 ## Quick Start
@@ -103,14 +108,82 @@ pie showData title Current project emphasis
 3. Run `pio run`
 4. Flash with `pio run -t upload --upload-port /dev/ttyACM0`
 
-## How To Swap The Active Effect
+Example message:
 
-The main app only instantiates one effect:
+```json
+{
+  "text": "Olá, eu sou o Klein, seu gato assistente virtual",
+  "color": [255, 140, 0]
+}
+```
+
+## Serial Override
+
+Com o firmware rodando, voce pode trocar o letreiro sem reflash pelo monitor serial em `115200`:
+
+```text
+TEXT:Olá, eu sou o Klein
+COLOR:255,140,0
+STATUS
+CLEAR
+```
+
+Regras:
+
+- `TEXT:` ativa um override temporario e passa a repetir essa mensagem no playback.
+- `COLOR:r,g,b` define a cor do proximo override.
+- `CLEAR` remove o override e volta para as mensagens do `config.yaml`.
+- `STATUS` mostra se o override esta ativo.
+- O texto continua sendo normalizado para o charset suportado pela fonte 5x7.
+
+## Home Assistant
+
+O firmware agora pode buscar uma mensagem do Home Assistant por Wi-Fi usando a REST API.
+
+Arquivos:
+
+- o template tracked fica em `include/ledmatrix8x8_secrets.example.h`
+- o arquivo real fica em `include/ledmatrix8x8_secrets.h`
+- `include/ledmatrix8x8_secrets.h` esta ignorado no Git
+
+Configuracao local esperada:
 
 ```cpp
-#include <CatAnimation.h>
+#define LEDMATRIX_WIFI_SSID "Bitter"
+#define LEDMATRIX_WIFI_PASSWORD "..."
+#define LEDMATRIX_HA_BASE_URL "http://192.168.15.11:8123"
+#define LEDMATRIX_HA_ACCESS_TOKEN "SEU_LONG_LIVED_ACCESS_TOKEN"
+#define LEDMATRIX_HA_ENTITY_ID "input_text.ledmatrix8x8_message"
+```
 
-static CatAnimationEffect currentEffect(PROJECT_CAT_FRAME_MS);
+Fluxo:
+
+1. Crie um Long-Lived Access Token no perfil do Home Assistant.
+2. Garanta que exista o helper `input_text.ledmatrix8x8_message`.
+3. Faça upload do firmware.
+4. Quando o helper mudar, a matriz assume essa mensagem com a cor configurada em `config.yaml`.
+
+Observacoes:
+
+- O override manual por `TEXT:` continua com prioridade sobre o Home Assistant.
+- Se o helper ficar vazio, a matriz volta para o playback padrao do `config.yaml`.
+- Tentei criar o helper remotamente, mas o usuario `homesystem` nao tem permissao de escrita em `/home/homesystem/homeassistant/configuration.yaml`.
+
+## How To Swap The Active Effect
+
+The main app instantiates one playback effect that already combines the cat library and the text library:
+
+```cpp
+#include <CatMessagePlayback.h>
+
+static CatMessagePlaybackEffect currentEffect(
+  PROJECT_CAT_FRAME_MS,
+  PROJECT_CAT_LOOPS,
+  PROJECT_SCROLL_STEP_MS,
+  PROJECT_MESSAGE_PAUSE_MS,
+  PROJECT_MESSAGES,
+  PROJECT_MESSAGE_COUNT
+);
 ```
 
 To add another behavior, create a new header under `lib/LedMatrixEffects/src/` implementing `LedMatrixEffect`, then swap the instance in `ledmatrix8x8_app.h`.

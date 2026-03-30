@@ -24,6 +24,10 @@ class CatAnimationEffect : public LedMatrixEffect {
   explicit CatAnimationEffect(uint16_t frameIntervalMs)
       : frameIntervalMs_(frameIntervalMs) {}
 
+  static size_t frameCount() {
+    return sizeof(kCatAnimationFrames) / sizeof(kCatAnimationFrames[0]);
+  }
+
   const char *name() const override {
     return "CAT ONLY";
   }
@@ -46,10 +50,6 @@ class CatAnimationEffect : public LedMatrixEffect {
   }
 
  private:
-  static size_t frameCount() {
-    return sizeof(kCatAnimationFrames) / sizeof(kCatAnimationFrames[0]);
-  }
-
   void drawFrame(LedMatrixCore &matrix, size_t index) {
     const uint32_t bodyColor = matrix.color(255, 140, 0);
     const uint32_t detailColor = matrix.color(100, 100, 100);
