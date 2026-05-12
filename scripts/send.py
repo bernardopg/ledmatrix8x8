@@ -37,7 +37,7 @@ def auto_detect_port() -> str:
 def send_and_receive(port: str, commands: list[str], timeout: float = RESPONSE_TIMEOUT) -> None:
     with serial.Serial(port, BAUD_RATE, timeout=0.1) as ser:
         time.sleep(0.1)
-        ser.flushInput()
+        ser.reset_input_buffer()
         for cmd in commands:
             ser.write((cmd + '\n').encode('utf-8'))
 

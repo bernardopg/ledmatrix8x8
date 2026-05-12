@@ -42,6 +42,10 @@
     "[ignore]": {
         "editor.defaultFormatter": "foxundermoon.shell-format"
     },
+    "isort.importStrategy": "fromEnvironment",
+    "isort.interpreter": [
+        "${workspaceFolder}/.venv/bin/python"
+    ],
     "go.liveErrors": {
         "enabled": false,
         "delay": 500

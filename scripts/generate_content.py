@@ -10,15 +10,20 @@ from __future__ import annotations
 import json
 import pathlib
 import unicodedata
+from typing import Any
 
 
 def detect_root() -> pathlib.Path:
     if "__file__" in globals():
         return pathlib.Path(__file__).resolve().parent.parent
 
-    if "Import" in globals():
-        Import("env")
-        return pathlib.Path(env["PROJECT_DIR"]).resolve()
+    platformio_import = globals().get("Import")
+    if callable(platformio_import):
+        platformio_import("env")
+        platformio_env: Any = globals().get("env", {})
+        project_dir = platformio_env.get("PROJECT_DIR")
+        if project_dir:
+            return pathlib.Path(project_dir).resolve()
 
     return pathlib.Path.cwd().resolve()
 
