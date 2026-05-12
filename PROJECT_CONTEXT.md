@@ -30,12 +30,11 @@ Um display 8x8 e extremamente limitado. Se o firmware for pensado apenas como de
 
 ## Nao objetivos por enquanto
 
-- Wi-Fi embarcado no firmware
-- autenticar diretamente com APIs externas
-- CI/CD
-- app mobile ou dashboard web
+- consumir APIs externas complexas diretamente no ESP32 alem do Home Assistant REST ja suportado
+- armazenar historico, agenda ou estado persistente no microcontrolador
+- app mobile ou dashboard web proprio
 
-Essas integracoes fazem mais sentido em scripts externos ou automacoes locais, que convertem dados reais em mensagens curtas.
+Integracoes mais pesadas fazem mais sentido em scripts externos ou automacoes locais, que convertem dados reais em mensagens curtas para a serial ou para helpers do Home Assistant.
 
 ## Arquitetura
 
@@ -65,6 +64,7 @@ Motivo:
 
 - loop de playback entre gato e letreiro
 - injeta mensagens geradas a partir de `config.yaml`
+- aplica overrides por Serial e Home Assistant com prioridade definida
 - inicializa o runtime da matriz e o efeito ativo
 
 ## Requisitos operacionais
@@ -78,9 +78,10 @@ Motivo:
 
 ### Curto prazo
 
-- suporte a mais sprites
+- validar no hardware real o novo `STATUS` expandido
+- suporte a mais sprites e estados visuais do gato
 - presets de mensagem por contexto
-- script local para mandar `TEXT:` para a serial com mais ergonomia
+- testes host-side para regras de prioridade Serial/Home Assistant/config
 
 ### Medio prazo
 

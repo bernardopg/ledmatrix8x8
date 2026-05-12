@@ -10,12 +10,21 @@ import serial.tools.list_ports
 ESPRESSIF_VID = 0x303A
 BAUD_RATE = 115200
 RESPONSE_TIMEOUT = 2.0
+SERIAL_OPEN_DELAY = 1.2
+RGB_PATTERN = re.compile(r'^\d{1,3},\d{1,3},\d{1,3}$')
 
 
 def _validate_rgb(rgb: str) -> None:
-    if not re.match(r'^\d{1,3},\d{1,3},\d{1,3}$', rgb):
+    if not RGB_PATTERN.match(rgb):
         raise click.BadParameter(
             f"formato inválido '{rgb}'. Use r,g,b (ex: 255,140,0)",
+            param_hint="'rgb'"
+        )
+
+    components = [int(component) for component in rgb.split(',')]
+    if any(component < 0 or component > 255 for component in components):
+        raise click.BadParameter(
+            f"valor inválido '{rgb}'. Cada componente RGB deve estar entre 0 a 255",
             param_hint="'rgb'"
         )
 
@@ -36,8 +45,9 @@ def auto_detect_port() -> str:
 
 def send_and_receive(port: str, commands: list[str], timeout: float = RESPONSE_TIMEOUT) -> None:
     with serial.Serial(port, BAUD_RATE, timeout=0.1) as ser:
-        time.sleep(0.1)
+        time.sleep(SERIAL_OPEN_DELAY)
         ser.reset_input_buffer()
+        ser.write(b'\n')
         for cmd in commands:
             ser.write((cmd + '\n').encode('utf-8'))
 

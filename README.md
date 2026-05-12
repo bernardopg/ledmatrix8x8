@@ -103,10 +103,32 @@ pie showData title Current project emphasis
 
 ## Quick Start
 
-1. Edit `config.yaml`
-2. Run `python scripts/generate_content.py`
-3. Run `pio run`
-4. Flash with `pio run -t upload --upload-port /dev/ttyACM0`
+1. Prepare o ambiente local:
+
+```bash
+make setup
+```
+
+2. Edite `config.yaml` e, se for usar Wi-Fi/Home Assistant, copie `include/ledmatrix8x8_secrets.example.h` para `include/ledmatrix8x8_secrets.h`.
+3. Compile o firmware:
+
+```bash
+make build
+```
+
+4. Faça upload para o ESP32 conectado via USB:
+
+```bash
+make upload PORT=/dev/ttyACM0
+```
+
+5. Confira o diagnostico serial:
+
+```bash
+make status PORT=/dev/ttyACM0
+```
+
+Os comandos `make` usam o PlatformIO instalado na `.venv`. Se preferir rodar direto, use `PATH="$PWD/.venv/bin:$PATH" pio run`.
 
 Example message:
 
@@ -131,10 +153,18 @@ CLEAR
 Regras:
 
 - `TEXT:` ativa um override temporario e passa a repetir essa mensagem no playback.
-- `COLOR:r,g,b` define a cor do proximo override.
-- `CLEAR` remove o override e volta para as mensagens do `config.yaml`.
-- `STATUS` mostra se o override esta ativo.
+- `COLOR:r,g,b` define a cor do proximo override; cada componente precisa estar entre `0` e `255`.
+- `CLEAR` remove o override manual. Se o Home Assistant tiver mensagem ativa, ele reassume com a cor HA atual; se nao tiver, volta para o `config.yaml`.
+- `STATUS` mostra fonte atual, override, cor serial, cor HA, Wi-Fi, IP, ultimo HTTP e ultimo poll.
 - O texto continua sendo normalizado para o charset suportado pela fonte 5x7.
+
+Tambem existe o wrapper Python:
+
+```bash
+make status PORT=/dev/ttyACM0
+.venv/bin/python scripts/send.py --port /dev/ttyACM0 text --color 255,140,0 "Ola Klein"
+.venv/bin/python scripts/send.py --port /dev/ttyACM0 clear
+```
 
 ## Home Assistant
 
@@ -154,19 +184,23 @@ Configuracao local esperada:
 #define LEDMATRIX_HA_BASE_URL "http://192.168.15.11:8123"
 #define LEDMATRIX_HA_ACCESS_TOKEN "SEU_LONG_LIVED_ACCESS_TOKEN"
 #define LEDMATRIX_HA_ENTITY_ID "input_text.ledmatrix8x8_message"
+#define LEDMATRIX_HA_COLOR_ENTITY_ID "input_text.ledmatrix8x8_color"
 ```
 
 Fluxo:
 
 1. Crie um Long-Lived Access Token no perfil do Home Assistant.
-2. Garanta que exista o helper `input_text.ledmatrix8x8_message`.
+2. Garanta que existam os helpers `input_text.ledmatrix8x8_message` e `input_text.ledmatrix8x8_color`.
 3. Faça upload do firmware.
-4. Quando o helper mudar, a matriz assume essa mensagem com a cor configurada em `config.yaml`.
+4. Quando o helper de mensagem mudar, a matriz assume essa mensagem.
+5. Quando o helper de cor mudar, a matriz aceita `r,g,b` (`0,255,160`) ou hexadecimal (`#00FFA0`).
 
 Observacoes:
 
 - O override manual por `TEXT:` continua com prioridade sobre o Home Assistant.
-- Se o helper ficar vazio, a matriz volta para o playback padrao do `config.yaml`.
+- Se o helper de mensagem ficar vazio, a matriz volta para o playback padrao do `config.yaml`.
+- Se o helper de cor ficar vazio, `unknown`, `unavailable` ou invalido, a matriz volta para a cor HA padrao do `config.yaml`.
+- `STATUS` e o log serial ajudam a diagnosticar Wi-Fi, HTTP e o ultimo estado recebido.
 - Tentei criar o helper remotamente, mas o usuario `homesystem` nao tem permissao de escrita em `/home/homesystem/homeassistant/configuration.yaml`.
 
 ## How To Swap The Active Effect
@@ -201,8 +235,10 @@ If your matrix is wired differently, update `MATRIX_ZIGZAG` and `ORIGIN_BOTTOM` 
 - Build more effects: blink, idle pulse, side-profile cat, tiny text scroller, status glyphs.
 - Add an effect selector later without changing the core matrix library.
 - Reuse the same runtime for Kanban/Obsidian-inspired modes in future iterations.
+- Keep the project TODO updated in [`TODO.md`](TODO.md).
 
 ## Reference Docs
 
 - Product context: [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)
+- Project TODO: [TODO.md](TODO.md)
 - Inspirations and integrations: [docs/INSPIRATIONS.md](docs/INSPIRATIONS.md)

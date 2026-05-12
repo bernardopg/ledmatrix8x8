@@ -5,18 +5,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
+# One-time setup
+make setup
+
+# Full local verification: pytest, mypy, isort check, PlatformIO build
+make check
+
 # Build (also runs generate_content.py automatically via PlatformIO pre-script)
-pio run
+make build
 
 # Flash
-pio run -t upload --upload-port /dev/ttyACM0
+make upload PORT=/dev/ttyACM0
 
 # Serial monitor (115200 baud)
-pio device monitor
+make monitor PORT=/dev/ttyACM0
+
+# Serial diagnostic
+make status PORT=/dev/ttyACM0
 
 # Regenerate generated/project_content.h manually
-python scripts/generate_content.py
+make generate
 ```
+
+If calling PlatformIO directly, remember it is installed in `.venv` by `make setup`: `PATH="$PWD/.venv/bin:$PATH" pio run`.
 
 ## Architecture
 
@@ -47,7 +58,7 @@ config.yaml
 
 ## Config → Build Pipeline
 
-`config.yaml` drives everything: messages, display timing, brightness, HA poll interval. The Python script normalizes text to ASCII uppercase (font charset). After editing `config.yaml`, run `pio run` — the pre-script regenerates `generated/project_content.h` automatically.
+`config.yaml` drives everything: messages, display timing, brightness, HA poll interval. The Python script normalizes text to ASCII uppercase (font charset). After editing `config.yaml`, run `make build` — the pre-script regenerates `generated/project_content.h` automatically.
 
 ## Override Priority
 

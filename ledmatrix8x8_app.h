@@ -11,6 +11,7 @@
 
 #include <CatMessagePlayback.h>
 #include <HomeAssistantTextClient.h>
+#include <LedMatrixColorParser.h>
 #include <LedMatrixCore.h>
 
 #if __has_include("ledmatrix8x8_secrets.h")
@@ -98,118 +99,76 @@ inline void printSerialHelp() {
 }
 
 inline bool parseColorCommand(const String &payload) {
-  const int firstComma = payload.indexOf(',');
-  const int secondComma = payload.indexOf(',', firstComma + 1);
-
-  if (firstComma < 0 || secondComma < 0) {
+  LedMatrixRgb parsed{};
+  if (!parseLedMatrixRgbTriplet(payload.c_str(), parsed)) {
     return false;
   }
 
-  const int red = payload.substring(0, firstComma).toInt();
-  const int green = payload.substring(firstComma + 1, secondComma).toInt();
-  const int blue = payload.substring(secondComma + 1).toInt();
-
-  if (red < 0 || red > 255 || green < 0 || green > 255 || blue < 0 || blue > 255) {
-    return false;
-  }
-
-  serialOverrideRed = static_cast<uint8_t>(red);
-  serialOverrideGreen = static_cast<uint8_t>(green);
-  serialOverrideBlue = static_cast<uint8_t>(blue);
-  return true;
-}
-
-inline bool parseRgbString(
-  const String &payload,
-  uint8_t &red,
-  uint8_t &green,
-  uint8_t &blue
-) {
-  const int firstComma = payload.indexOf(',');
-  const int secondComma = payload.indexOf(',', firstComma + 1);
-
-  if (firstComma < 0 || secondComma < 0) {
-    return false;
-  }
-
-  const int parsedRed = payload.substring(0, firstComma).toInt();
-  const int parsedGreen = payload.substring(firstComma + 1, secondComma).toInt();
-  const int parsedBlue = payload.substring(secondComma + 1).toInt();
-
-  if (parsedRed < 0 || parsedRed > 255 ||
-      parsedGreen < 0 || parsedGreen > 255 ||
-      parsedBlue < 0 || parsedBlue > 255) {
-    return false;
-  }
-
-  red = static_cast<uint8_t>(parsedRed);
-  green = static_cast<uint8_t>(parsedGreen);
-  blue = static_cast<uint8_t>(parsedBlue);
-  return true;
-}
-
-inline bool parseHexNibble(char value, uint8_t &result) {
-  if (value >= '0' && value <= '9') {
-    result = static_cast<uint8_t>(value - '0');
-    return true;
-  }
-
-  if (value >= 'a' && value <= 'f') {
-    result = static_cast<uint8_t>(value - 'a' + 10);
-    return true;
-  }
-
-  if (value >= 'A' && value <= 'F') {
-    result = static_cast<uint8_t>(value - 'A' + 10);
-    return true;
-  }
-
-  return false;
-}
-
-inline bool parseHexColor(
-  const String &payload,
-  uint8_t &red,
-  uint8_t &green,
-  uint8_t &blue
-) {
-  String value = payload;
-  value.trim();
-
-  if (value.startsWith("#")) {
-    value = value.substring(1);
-  }
-
-  if (value.length() != 6) {
-    return false;
-  }
-
-  uint8_t nibbles[6];
-  for (size_t index = 0; index < 6; index++) {
-    if (!parseHexNibble(value[index], nibbles[index])) {
-      return false;
-    }
-  }
-
-  red = static_cast<uint8_t>((nibbles[0] << 4) | nibbles[1]);
-  green = static_cast<uint8_t>((nibbles[2] << 4) | nibbles[3]);
-  blue = static_cast<uint8_t>((nibbles[4] << 4) | nibbles[5]);
+  serialOverrideRed = parsed.red;
+  serialOverrideGreen = parsed.green;
+  serialOverrideBlue = parsed.blue;
   return true;
 }
 
 inline bool parseHomeAssistantColor(
-  String payload,
+  const String &payload,
   uint8_t &red,
   uint8_t &green,
   uint8_t &blue
 ) {
-  payload.trim();
-  if (payload.length() == 0 || payload == "unknown" || payload == "unavailable") {
+  LedMatrixRgb parsed{};
+  if (!parseLedMatrixHomeAssistantColor(payload.c_str(), parsed)) {
     return false;
   }
 
-  return parseRgbString(payload, red, green, blue) ||
-         parseHexColor(payload, red, green, blue);
+  red = parsed.red;
+  green = parsed.green;
+  blue = parsed.blue;
+  return true;
+}
+
+inline void printYesNo(bool value) {
+  Serial.println(value ? "SIM" : "NAO");
+}
+
+inline const char *currentMessageSource() {
+  if (manualOverrideActive) {
+    return "SERIAL";
+  }
+  if (homeAssistantOverrideActive) {
+    return "HOME_ASSISTANT";
+  }
+  return "CONFIG";
+}
+
+inline void printLastPoll(const HomeAssistantTextClient &client) {
+  if (client.lastPollAtMs() == 0) {
+    Serial.println("NUNCA");
+    return;
+  }
+  Serial.print(client.lastPollAtMs());
+  Serial.println(" ms");
+}
+
+inline void printClientDiagnostics(
+  const char *label,
+  const HomeAssistantTextClient &client
+) {
+  Serial.print(label);
+  Serial.print(" habilitado: ");
+  printYesNo(client.enabled());
+  Serial.print(label);
+  Serial.print(" entity: ");
+  Serial.println(client.entityId().length() > 0 ? client.entityId() : "<nao configurado>");
+  Serial.print(label);
+  Serial.print(" ultimo HTTP: ");
+  Serial.println(client.lastHttpStatus());
+  Serial.print(label);
+  Serial.print(" ultimo poll: ");
+  printLastPoll(client);
+  Serial.print(label);
+  Serial.print(" ultimo estado: ");
+  Serial.println(client.lastState().length() > 0 ? client.lastState() : "<vazio>");
 }
 
 inline void processSerialCommand(String command) {
@@ -254,9 +213,9 @@ inline void processSerialCommand(String command) {
       currentEffect.showOverrideMessage(
         matrix,
         homeAssistantMessage,
-        PROJECT_HA_COLOR_RED,
-        PROJECT_HA_COLOR_GREEN,
-        PROJECT_HA_COLOR_BLUE
+        homeAssistantRed,
+        homeAssistantGreen,
+        homeAssistantBlue
       );
       Serial.println("Override manual limpo; Home Assistant reassumiu");
     } else {
@@ -267,18 +226,48 @@ inline void processSerialCommand(String command) {
   }
 
   if (command == "STATUS") {
+    Serial.println("---- STATUS LEDMATRIX8X8 ----");
+    Serial.print("Fonte atual: ");
+    Serial.println(currentMessageSource());
+    Serial.print("Uptime: ");
+    Serial.print(millis());
+    Serial.println(" ms");
+    Serial.print("Efeito atual: ");
+    Serial.println(currentEffect.name());
+    Serial.print("Brightness: ");
+    Serial.println(PROJECT_BRIGHTNESS);
     Serial.print("Override efetivo: ");
-    Serial.println(currentEffect.hasOverrideMessage() ? "SIM" : "NAO");
+    printYesNo(currentEffect.hasOverrideMessage());
     Serial.print("Override manual: ");
-    Serial.println(manualOverrideActive ? "SIM" : "NAO");
+    printYesNo(manualOverrideActive);
     Serial.print("Override Home Assistant: ");
-    Serial.println(homeAssistantOverrideActive ? "SIM" : "NAO");
+    printYesNo(homeAssistantOverrideActive);
     Serial.print("Cor serial atual: ");
     Serial.print(serialOverrideRed);
     Serial.print(",");
     Serial.print(serialOverrideGreen);
     Serial.print(",");
     Serial.println(serialOverrideBlue);
+    Serial.print("Cor Home Assistant atual: ");
+    Serial.print(homeAssistantRed);
+    Serial.print(",");
+    Serial.print(homeAssistantGreen);
+    Serial.print(",");
+    Serial.println(homeAssistantBlue);
+    Serial.print("Mensagem Home Assistant ativa: ");
+    Serial.println(homeAssistantMessage.length() > 0 ? homeAssistantMessage : "<vazia>");
+    Serial.print("WiFi configurado: ");
+    printYesNo(homeAssistantClient.wifiConfiguredForDiagnostics());
+    Serial.print("WiFi gerenciado por cliente principal: ");
+    printYesNo(homeAssistantClient.managesWifi());
+    Serial.print("WiFi conectado: ");
+    printYesNo(homeAssistantClient.wifiConnected());
+    Serial.print("WiFi status: ");
+    Serial.println(homeAssistantClient.wifiStatusText());
+    Serial.print("WiFi IP: ");
+    Serial.println(homeAssistantClient.localIpText());
+    printClientDiagnostics("HA mensagem", homeAssistantClient);
+    printClientDiagnostics("HA cor", homeAssistantColorClient);
     return;
   }
 

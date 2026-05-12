@@ -86,6 +86,70 @@ class HomeAssistantTextClient {
     return wifiConfigured() && apiConfigured();
   }
 
+  bool wifiConfiguredForDiagnostics() const {
+    return wifiConfigured();
+  }
+
+  bool apiConfiguredForDiagnostics() const {
+    return apiConfigured();
+  }
+
+  bool managesWifi() const {
+    return manageWifi_;
+  }
+
+  bool wifiConnected() const {
+    return WiFi.status() == WL_CONNECTED;
+  }
+
+  String localIpText() const {
+    if (!wifiConnected()) {
+      return "<desconectado>";
+    }
+    return WiFi.localIP().toString();
+  }
+
+  const char *wifiStatusText() const {
+    switch (WiFi.status()) {
+      case WL_IDLE_STATUS:
+        return "IDLE";
+      case WL_NO_SSID_AVAIL:
+        return "SSID_INDISPONIVEL";
+      case WL_SCAN_COMPLETED:
+        return "SCAN_COMPLETO";
+      case WL_CONNECTED:
+        return "CONECTADO";
+      case WL_CONNECT_FAILED:
+        return "FALHA_CONEXAO";
+      case WL_CONNECTION_LOST:
+        return "CONEXAO_PERDIDA";
+      case WL_DISCONNECTED:
+        return "DESCONECTADO";
+      default:
+        return "DESCONHECIDO";
+    }
+  }
+
+  const String &entityId() const {
+    return entityId_;
+  }
+
+  int lastHttpStatus() const {
+    return lastHttpStatus_;
+  }
+
+  uint32_t lastPollAtMs() const {
+    return lastPollAtMs_;
+  }
+
+  bool lastStateHasMessage() const {
+    return lastHasMessage_;
+  }
+
+  const String &lastState() const {
+    return lastMessage_;
+  }
+
   bool consumeStateChange(bool &hasMessage, String &message) {
     if (!hasPendingUpdate_) {
       return false;
@@ -184,6 +248,7 @@ class HomeAssistantTextClient {
     http.useHTTP10(true);
 
     if (!http.begin(client, url)) {
+      lastHttpStatus_ = 0;
       Serial.println("Falha ao iniciar cliente HTTP do Home Assistant");
       return;
     }
@@ -194,6 +259,7 @@ class HomeAssistantTextClient {
     http.addHeader("Connection", "close");
 
     const int statusCode = http.GET();
+    lastHttpStatus_ = statusCode;
     if (statusCode != HTTP_CODE_OK) {
       Serial.print("Home Assistant HTTP status: ");
       Serial.println(statusCode);
@@ -201,7 +267,7 @@ class HomeAssistantTextClient {
       return;
     }
 
-    DynamicJsonDocument document(1536);
+    JsonDocument document;
     const DeserializationError error = deserializeJson(document, http.getStream());
     http.end();
 
@@ -246,6 +312,7 @@ class HomeAssistantTextClient {
   uint32_t pollIntervalMs_ = 5000;
   uint32_t lastWifiAttemptAtMs_ = 0;
   uint32_t lastPollAtMs_ = 0;
+  int lastHttpStatus_ = 0;
   String lastMessage_;
   String pendingMessage_;
   bool wifiConnectStarted_ = false;
