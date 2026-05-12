@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from click.testing import CliRunner
+from unittest.mock import MagicMock, patch
+
 import click
+import pytest
+from click.testing import CliRunner
 
 
 class FakePort:
@@ -24,15 +25,20 @@ def test_auto_detect_no_device_raises():
             auto_detect_port()
 
 
-def test_auto_detect_multiple_uses_first(capsys):
+def test_auto_detect_multiple_uses_first():
     fake_ports = [
         FakePort('/dev/ttyACM0', 0x303A),
         FakePort('/dev/ttyACM1', 0x303A),
     ]
-    with patch('serial.tools.list_ports.comports', return_value=fake_ports):
+    with patch('serial.tools.list_ports.comports', return_value=fake_ports), \
+         patch('click.echo') as mock_echo:
         from scripts.send import auto_detect_port
         result = auto_detect_port()
     assert result == '/dev/ttyACM0'
+    mock_echo.assert_called_once_with(
+        'Múltiplas portas ESP32 encontradas. Usando /dev/ttyACM0',
+        err=True,
+    )
 
 
 def test_send_and_receive_writes_each_command():

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import sys
 import time
 
@@ -9,6 +10,14 @@ import serial.tools.list_ports
 ESPRESSIF_VID = 0x303A
 BAUD_RATE = 115200
 RESPONSE_TIMEOUT = 2.0
+
+
+def _validate_rgb(rgb: str) -> None:
+    if not re.match(r'^\d{1,3},\d{1,3},\d{1,3}$', rgb):
+        raise click.BadParameter(
+            f"formato inválido '{rgb}'. Use r,g,b (ex: 255,140,0)",
+            param_hint="'rgb'"
+        )
 
 
 def auto_detect_port() -> str:
@@ -53,11 +62,19 @@ def cli(ctx, port):
 @click.pass_context
 def text(ctx, message, color):
     """Envia TEXT: para o device. Aceita argumento ou stdin."""
+    if color is not None:
+        _validate_rgb(color)
+
     if message is None:
         if not sys.stdin.isatty():
             message = sys.stdin.read().strip()
         else:
             raise click.UsageError("Forneça texto como argumento ou via stdin")
+
+    if len(message) > 155:
+        raise click.UsageError(
+            f"mensagem muito longa ({len(message)} chars). Máximo: 155"
+        )
 
     port = ctx.obj['port'] or auto_detect_port()
     commands = []
@@ -72,6 +89,7 @@ def text(ctx, message, color):
 @click.pass_context
 def color(ctx, rgb):
     """Envia COLOR:r,g,b para o device."""
+    _validate_rgb(rgb)
     port = ctx.obj['port'] or auto_detect_port()
     send_and_receive(port, [f'COLOR:{rgb}'])
 
