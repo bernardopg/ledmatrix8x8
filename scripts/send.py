@@ -37,3 +37,35 @@ def send_and_receive(port: str, commands: list[str], timeout: float = RESPONSE_T
             line = ser.readline().decode('utf-8', errors='replace').strip()
             if line:
                 click.echo(line)
+
+
+@click.group()
+@click.option('--port', default=None, help='Porta serial (auto-detect se omitido)')
+@click.pass_context
+def cli(ctx, port):
+    ctx.ensure_object(dict)
+    ctx.obj['port'] = port
+
+
+@cli.command()
+@click.argument('message', required=False)
+@click.option('--color', default=None, help='Cor RGB: r,g,b (ex: 255,140,0)')
+@click.pass_context
+def text(ctx, message, color):
+    """Envia TEXT: para o device. Aceita argumento ou stdin."""
+    if message is None:
+        if not sys.stdin.isatty():
+            message = sys.stdin.read().strip()
+        else:
+            raise click.UsageError("Forneça texto como argumento ou via stdin")
+
+    port = ctx.obj['port'] or auto_detect_port()
+    commands = []
+    if color:
+        commands.append(f'COLOR:{color}')
+    commands.append(f'TEXT:{message}')
+    send_and_receive(port, commands)
+
+
+if __name__ == '__main__':
+    cli()

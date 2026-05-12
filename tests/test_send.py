@@ -67,3 +67,46 @@ def test_send_and_receive_prints_response(capsys):
 
     captured = capsys.readouterr()
     assert 'Override ativo' in captured.out
+
+
+def test_text_sends_message():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['text', 'Olá Klein'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['TEXT:Olá Klein'])
+
+
+def test_text_with_color_sends_color_first():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['text', '--color', '255,140,0', 'Olá Klein'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with(
+            '/dev/ttyACM0', ['COLOR:255,140,0', 'TEXT:Olá Klein']
+        )
+
+
+def test_text_reads_stdin():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['text'], input='Olá via stdin\n')
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['TEXT:Olá via stdin'])
+
+
+def test_port_flag_skips_autodetect():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port') as mock_detect, \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['--port', '/dev/ttyUSB0', 'text', 'msg'])
+        assert result.exit_code == 0
+        mock_detect.assert_not_called()
+        mock_send.assert_called_once_with('/dev/ttyUSB0', ['TEXT:msg'])
