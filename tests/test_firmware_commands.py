@@ -35,6 +35,8 @@ def test_led_matrix_firmware_commands_parse_brightness_effect_mode_and_format_ha
                 assert(effectMode == LedMatrixEffectMode::kCatOnly);
                 assert(parseLedMatrixEffectMode("cat", effectMode));
                 assert(effectMode == LedMatrixEffectMode::kCatOnly);
+                assert(parseLedMatrixEffectMode("cat-only", effectMode));
+                assert(effectMode == LedMatrixEffectMode::kCatOnly);
                 assert(parseLedMatrixEffectMode("cat + marquee", effectMode));
                 assert(effectMode == LedMatrixEffectMode::kCatMessagePlayback);
                 assert(parseLedMatrixEffectMode("playback", effectMode));

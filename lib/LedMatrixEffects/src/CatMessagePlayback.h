@@ -61,6 +61,10 @@ class CatMessagePlaybackEffect : public LedMatrixEffect {
     }
   }
 
+  bool supportsOverrides() const override {
+    return true;
+  }
+
   void showOverrideMessage(
     LedMatrixCore &matrix,
     const String &message,

@@ -51,16 +51,6 @@ static CatMessagePlaybackEffect catMessageEffect(
 static LedMatrixEffectMode currentEffectMode = LedMatrixEffectMode::kCatMessagePlayback;
 static LedMatrixEffect *currentEffect = &catMessageEffect;
 
-inline void applyEffectMode(LedMatrixEffectMode mode) {
-  currentEffectMode = mode;
-  if (mode == LedMatrixEffectMode::kCatOnly) {
-    currentEffect = &catOnlyEffect;
-  } else {
-    currentEffect = &catMessageEffect;
-  }
-  currentEffect->begin(matrix);
-}
-
 static HomeAssistantTextClient homeAssistantClient(
   LEDMATRIX_WIFI_SSID,
   LEDMATRIX_WIFI_PASSWORD,
@@ -94,6 +84,7 @@ static HomeAssistantTextClient homeAssistantColorClient(
 );
 
 static String serialLineBuffer;
+static String serialOverrideMessage;
 static uint8_t serialOverrideRed = 255;
 static uint8_t serialOverrideGreen = 255;
 static uint8_t serialOverrideBlue = 255;
@@ -104,6 +95,45 @@ static uint8_t homeAssistantRed = PROJECT_HA_COLOR_RED;
 static uint8_t homeAssistantGreen = PROJECT_HA_COLOR_GREEN;
 static uint8_t homeAssistantBlue = PROJECT_HA_COLOR_BLUE;
 static uint8_t runtimeBrightness = PROJECT_BRIGHTNESS;
+
+inline void applyEffectMode(LedMatrixEffectMode mode) {
+  currentEffectMode = mode;
+  if (mode == LedMatrixEffectMode::kCatOnly) {
+    currentEffect = &catOnlyEffect;
+  } else {
+    currentEffect = &catMessageEffect;
+  }
+  currentEffect->begin(matrix);
+
+  // Re-apply whichever override is currently active so the new effect
+  // starts in the right state instead of reverting to the idle animation.
+  if (manualOverrideActive && serialOverrideMessage.length() > 0) {
+    if (currentEffect->supportsOverrides()) {
+      currentEffect->showOverrideMessage(
+        matrix,
+        serialOverrideMessage,
+        serialOverrideRed,
+        serialOverrideGreen,
+        serialOverrideBlue
+      );
+    } else {
+      Serial.println("Aviso: efeito atual nao suporta overrides; override manual ignorado");
+    }
+  } else if (homeAssistantOverrideActive && !manualOverrideActive &&
+             homeAssistantMessage.length() > 0) {
+    if (currentEffect->supportsOverrides()) {
+      currentEffect->showOverrideMessage(
+        matrix,
+        homeAssistantMessage,
+        homeAssistantRed,
+        homeAssistantGreen,
+        homeAssistantBlue
+      );
+    } else {
+      Serial.println("Aviso: efeito atual nao suporta overrides; override HA ignorado");
+    }
+  }
+}
 
 inline void printSerialHelp() {
   Serial.println("Comandos:");
@@ -198,15 +228,20 @@ inline void processSerialCommand(String command) {
   if (command.startsWith("TEXT:")) {
     const String message = command.substring(5);
     manualOverrideActive = true;
-    currentEffect->showOverrideMessage(
-      matrix,
-      message,
-      serialOverrideRed,
-      serialOverrideGreen,
-      serialOverrideBlue
-    );
-    Serial.print("Override ativo: ");
-    Serial.println(message);
+    serialOverrideMessage = message;
+    if (currentEffect->supportsOverrides()) {
+      currentEffect->showOverrideMessage(
+        matrix,
+        message,
+        serialOverrideRed,
+        serialOverrideGreen,
+        serialOverrideBlue
+      );
+      Serial.print("Override ativo: ");
+      Serial.println(message);
+    } else {
+      Serial.println("Aviso: efeito atual (CAT ONLY) nao exibe mensagens. Use EFFECT:playback primeiro.");
+    }
     return;
   }
 
@@ -254,14 +289,17 @@ inline void processSerialCommand(String command) {
 
   if (command == "CLEAR") {
     manualOverrideActive = false;
+    serialOverrideMessage = "";
     if (homeAssistantOverrideActive) {
-      currentEffect->showOverrideMessage(
-        matrix,
-        homeAssistantMessage,
-        homeAssistantRed,
-        homeAssistantGreen,
-        homeAssistantBlue
-      );
+      if (currentEffect->supportsOverrides()) {
+        currentEffect->showOverrideMessage(
+          matrix,
+          homeAssistantMessage,
+          homeAssistantRed,
+          homeAssistantGreen,
+          homeAssistantBlue
+        );
+      }
       Serial.println("Override manual limpo; Home Assistant reassumiu");
     } else {
       currentEffect->clearOverrideMessage(matrix);
@@ -287,6 +325,8 @@ inline void processSerialCommand(String command) {
     printYesNo(currentEffect->hasOverrideMessage());
     Serial.print("Override manual: ");
     printYesNo(manualOverrideActive);
+    Serial.print("Mensagem serial ativa: ");
+    Serial.println(serialOverrideMessage.length() > 0 ? serialOverrideMessage : "<vazia>");
     Serial.print("Override Home Assistant: ");
     printYesNo(homeAssistantOverrideActive);
     Serial.print("Cor serial atual: ");
@@ -375,13 +415,15 @@ inline void handleHomeAssistant() {
     }
 
     if (homeAssistantOverrideActive && !manualOverrideActive && homeAssistantMessage.length() > 0) {
-      currentEffect->showOverrideMessage(
-        matrix,
-        homeAssistantMessage,
-        homeAssistantRed,
-        homeAssistantGreen,
-        homeAssistantBlue
-      );
+      if (currentEffect->supportsOverrides()) {
+        currentEffect->showOverrideMessage(
+          matrix,
+          homeAssistantMessage,
+          homeAssistantRed,
+          homeAssistantGreen,
+          homeAssistantBlue
+        );
+      }
     }
   }
 
@@ -400,13 +442,15 @@ inline void handleHomeAssistant() {
   }
 
   if (hasMessage) {
-    currentEffect->showOverrideMessage(
-      matrix,
-      message,
-      homeAssistantRed,
-      homeAssistantGreen,
-      homeAssistantBlue
-    );
+    if (currentEffect->supportsOverrides()) {
+      currentEffect->showOverrideMessage(
+        matrix,
+        message,
+        homeAssistantRed,
+        homeAssistantGreen,
+        homeAssistantBlue
+      );
+    }
   } else {
     currentEffect->clearOverrideMessage(matrix);
   }
