@@ -67,5 +67,30 @@ def text(ctx, message, color):
     send_and_receive(port, commands)
 
 
+@cli.command()
+@click.argument('rgb')
+@click.pass_context
+def color(ctx, rgb):
+    """Envia COLOR:r,g,b para o device."""
+    port = ctx.obj['port'] or auto_detect_port()
+    send_and_receive(port, [f'COLOR:{rgb}'])
+
+
+@cli.command()
+@click.pass_context
+def clear(ctx):
+    """Envia CLEAR para o device."""
+    port = ctx.obj['port'] or auto_detect_port()
+    send_and_receive(port, ['CLEAR'])
+
+
+@cli.command()
+@click.pass_context
+def status(ctx):
+    """Envia STATUS para o device e exibe resposta."""
+    port = ctx.obj['port'] or auto_detect_port()
+    send_and_receive(port, ['STATUS'])
+
+
 if __name__ == '__main__':
     cli()

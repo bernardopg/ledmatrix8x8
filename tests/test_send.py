@@ -110,3 +110,33 @@ def test_port_flag_skips_autodetect():
         assert result.exit_code == 0
         mock_detect.assert_not_called()
         mock_send.assert_called_once_with('/dev/ttyUSB0', ['TEXT:msg'])
+
+
+def test_color_command():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['color', '255,140,0'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['COLOR:255,140,0'])
+
+
+def test_clear_command():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['clear'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['CLEAR'])
+
+
+def test_status_command():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['status'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['STATUS'])
