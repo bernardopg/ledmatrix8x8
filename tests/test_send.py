@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from click.testing import CliRunner
+import click
 
 
 class FakePort:
@@ -19,7 +20,7 @@ def test_auto_detect_finds_esp32():
 def test_auto_detect_no_device_raises():
     with patch('serial.tools.list_ports.comports', return_value=[]):
         from scripts.send import auto_detect_port
-        with pytest.raises(SystemExit):
+        with pytest.raises(click.ClickException):
             auto_detect_port()
 
 
