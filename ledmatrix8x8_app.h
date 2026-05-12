@@ -299,8 +299,10 @@ inline void processSerialCommand(String command) {
           homeAssistantGreen,
           homeAssistantBlue
         );
+        Serial.println("Override manual limpo; Home Assistant reassumiu");
+      } else {
+        Serial.println("Aviso: override manual limpo, mas o efeito atual nao suporta override do Home Assistant");
       }
-      Serial.println("Override manual limpo; Home Assistant reassumiu");
     } else {
       currentEffect->clearOverrideMessage(matrix);
       Serial.println("Override limpo; voltando ao config.yaml");

@@ -48,7 +48,7 @@ The goal is no longer a throwaway test sketch. It is now a compact hardware arti
 
 | Item | Status |
 | --- | --- |
-| Current deployed effect | Cat face + scrolling text |
+| Current deployed effect | Animated cat face + scrolling text |
 | Validation status | `make check` green |
 | Device target | `ESP32-S3-DevKitC-1` |
 | LED matrix | `WS2812B 8x8` |
@@ -94,7 +94,7 @@ pie showData title Current project emphasis
 | Firmware commands | `lib/LedMatrixCore/src/LedMatrixFirmwareCommands.h` | Parses BRIGHTNESS/EFFECT commands; formats HA error summaries |
 | Message priority | `lib/LedMatrixCore/src/LedMatrixMessagePriority.h` | Resolves Serial > HomeAssistant > Config source priority |
 | Effect contract | `lib/LedMatrixEffects/src/LedMatrixEffect.h` | Common interface for importable effects |
-| Cat effect | `lib/LedMatrixEffects/src/CatAnimation.h` | Pixel cat animation library |
+| Cat effect | `lib/LedMatrixEffects/src/CatAnimation.h` | Animated pixel cat library |
 | Text lib | `lib/LedMatrixText/src/TextMarquee.h` | 5x7 sprite marquee with editable message text |
 | Playback effect | `lib/LedMatrixEffects/src/CatMessagePlayback.h` | Alternates cat idle and scrolling messages |
 | HA client | `lib/LedMatrixIntegrations/src/HomeAssistantTextClient.h` | Polls HA REST API; manages Wi-Fi lifecycle |
@@ -106,6 +106,7 @@ pie showData title Current project emphasis
 - The firmware is now structured to swap effects without rewriting the whole project.
 - The matrix core can be reused by text effects, status indicators, or future animations.
 - The cat effect gives the badge a visual identity instead of looking like a generic LED test.
+- The cat effect already has simple motion frames, so the device feels alive even when idle.
 - The text marquee turns the badge into a practical display for short messages and status lines.
 - The repo is ready to grow into multiple behaviors rather than a single monolithic sketch.
 

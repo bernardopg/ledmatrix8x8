@@ -25,7 +25,7 @@ Um display 8x8 e extremamente limitado. Se o firmware for pensado apenas como de
 - Conteudo desacoplado em `config.yaml`
 - Header gerado para manter build simples no microcontrolador
 - Comandos serial para override rapido
-- Animacao de gato como camada de personalidade e estado idle
+- Animacao de gato com quadros simples de idle/blink/happy como camada de personalidade
 - Integracao opcional com Home Assistant via REST para override remoto
 
 ## Nao objetivos por enquanto

@@ -22,22 +22,23 @@
 
 ## Rotina de validacao
 
-- [ ] Manter `make check` verde antes de commits relevantes.
+- [x] Manter `make check` verde antes de commits relevantes.
 
 ## Prioridade 0 - manter verde
 
-- [ ] Adicionar testes para `BRIGHTNESS` e `EFFECT` no `test_send.py` (brightness_command, effect_invalid_noop).
-- [ ] Adicionar teste host-side para `parseLedMatrixEffectMode("CAT-ONLY", ...)` com hifem (alias nao coberto).
+- [x] Adicionar testes para `BRIGHTNESS` e `EFFECT` no `test_send.py` (brightness_command, effect_invalid_noop).
+- [x] Adicionar teste host-side para `parseLedMatrixEffectMode("CAT-ONLY", ...)` com hifem (alias nao coberto).
 
 ## Prioridade 1 - robustez do firmware
 
-- [ ] Fazer `LedMatrixEffect::supportsOverrides()` ser usado pelo app: se o efeito ativo nao suporta override, logar aviso ao inves de chamar silenciosamente.
-- [ ] Garantir que `EFFECT:cat` limpa o override ativo antes de trocar (para evitar estado inconsistente entre o ponteiro de efeito e `manualOverrideActive`).
-- [ ] Adicionar reset de override quando `EFFECT:` muda o efeito (o override manual pode apontar para o efeito anterior).
+- [x] Fazer `LedMatrixEffect::supportsOverrides()` ser usado pelo app: se o efeito ativo nao suporta override, logar aviso ao inves de chamar silenciosamente.
+- [x] Garantir que `EFFECT:cat` limpa o override ativo antes de trocar (para evitar estado inconsistente entre o ponteiro de efeito e `manualOverrideActive`).
+- [x] Adicionar reset de override quando `EFFECT:` muda o efeito (o override manual pode apontar para o efeito anterior).
 
 ## Prioridade 2 - experiencia visual
 
-- [ ] Transformar o gato de sprite unico em animacao real: piscar, idle, feliz, erro, loading.
+- [x] Transformar o gato de sprite unico em animacao real com quadros de idle, blink e happy.
+- [ ] Evoluir a animacao do gato para estados de erro e loading.
 - [ ] Criar presets de mensagem/estado: `FOCO`, `CALL`, `DONE`, `BREAK`, `ERROR`.
 - [ ] Criar pequenos icones 8x8 para estados de agenda/tarefa/status.
 

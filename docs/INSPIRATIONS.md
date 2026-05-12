@@ -67,14 +67,14 @@ Rotacionar 3 a 5 mensagens pequenas, com cor por contexto:
 
 ### 3. Gato como feedback de estado
 
-Usar o gato para comunicar:
+O gato ja pode piscar e variar de expressao com quadros simples. A ideia e evoluir para comunicar:
 
 - idle
 - carregando
 - concluido
 - erro
 
-Isso pode evoluir para sprites diferentes ou pequenas emocoes.
+Isso pode evoluir para sprites diferentes ou pequenas emocoes sem perder o clima do badge.
 
 ### 4. Atualizacao sem reflash
 
