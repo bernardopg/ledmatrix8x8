@@ -19,10 +19,17 @@
 - [x] Adicionar `CatAnimationEffect` separado para modo sem marquee.
 - [x] Fazer upload no ESP32 e validar `STATUS`, `COLOR`, `TEXT`, `BRIGHTNESS`, `EFFECT` e `CLEAR` com o firmware mais recente.
 - [x] Validar no Home Assistant real que mensagem e cor atualizam independentemente.
+- [x] Criar aba Lovelace `LED Matrix` no Home Assistant do homelab com helpers, presets e diagnostico.
+- [x] Corrigir e validar scripts HA `ledmatrix8x8_*` usados pelos presets do dashboard.
+- [x] Validar e2e HA -> ESP32 com preset `DONE`, cor `0,255,160` e `STATUS` em `HOME_ASSISTANT`.
+- [x] Validar precedencia de fontes: `TEXT` serial vence HA, `CLEAR` devolve para HA e helpers vazios voltam para `config.yaml`.
+- [x] Adicionar sete icones 8x8 (`agenda`, `task`, `status`, `focus`, `call`, `break`, `error`) com preview SVG.
+- [x] Adicionar comando/prefixo `ICON:nome[:mensagem]` via serial, wrapper Python e Home Assistant.
 
 ## Rotina de validacao
 
 - [x] Manter `make check` verde antes de commits relevantes.
+- [x] Smoke test real atual: `make check`; `make status`; preset/clear HA via REST; serial `TEXT`/`CLEAR`.
 
 ## Prioridade 0 - manter verde
 
@@ -39,8 +46,8 @@
 
 - [x] Transformar o gato de sprite unico em animacao real com quadros de idle, blink e happy.
 - [ ] Evoluir a animacao do gato para estados de erro e loading.
-- [ ] Criar presets de mensagem/estado: `FOCO`, `CALL`, `DONE`, `BREAK`, `ERROR`.
-- [ ] Criar pequenos icones 8x8 para estados de agenda/tarefa/status.
+- [x] Criar presets HA de mensagem/estado: `FOCO`, `CALL`, `DONE`, `BREAK`, `ERROR`.
+- [x] Criar pequenos icones 8x8 para estados de agenda/tarefa/status e presets de foco/chamada/pausa/erro.
 
 ## Prioridade 3 - integracoes locais
 

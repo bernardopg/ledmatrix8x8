@@ -14,6 +14,7 @@
 #include <LedMatrixColorParser.h>
 #include <LedMatrixCore.h>
 #include <LedMatrixFirmwareCommands.h>
+#include <LedMatrixIcons.h>
 #include <LedMatrixMessagePriority.h>
 
 #if __has_include("ledmatrix8x8_secrets.h")
@@ -91,10 +92,74 @@ static uint8_t serialOverrideBlue = 255;
 static bool manualOverrideActive = false;
 static bool homeAssistantOverrideActive = false;
 static String homeAssistantMessage;
+static const LedMatrixIconDefinition *serialOverrideIcon = nullptr;
+static const LedMatrixIconDefinition *homeAssistantIcon = nullptr;
 static uint8_t homeAssistantRed = PROJECT_HA_COLOR_RED;
 static uint8_t homeAssistantGreen = PROJECT_HA_COLOR_GREEN;
 static uint8_t homeAssistantBlue = PROJECT_HA_COLOR_BLUE;
 static uint8_t runtimeBrightness = PROJECT_BRIGHTNESS;
+
+struct LedMatrixOverridePayload {
+  String message;
+  const LedMatrixIconDefinition *icon = nullptr;
+};
+
+inline LedMatrixOverridePayload resolveLedMatrixOverridePayload(const String &rawMessage) {
+  LedMatrixOverridePayload payload;
+  payload.message = rawMessage;
+  payload.icon = nullptr;
+  if (rawMessage.length() < 6) {
+    return payload;
+  }
+
+  String prefix = rawMessage.substring(0, 5);
+  prefix.toUpperCase();
+  if (prefix != "ICON:") {
+    return payload;
+  }
+
+  String iconPayload = rawMessage.substring(5);
+  const int separator = iconPayload.indexOf(':');
+  String iconName = separator >= 0 ? iconPayload.substring(0, separator) : iconPayload;
+  String iconMessage = separator >= 0 ? iconPayload.substring(separator + 1) : "";
+  iconName.trim();
+  iconMessage.trim();
+
+  LedMatrixIconId iconId = LedMatrixIconId::kStatus;
+  if (!parseLedMatrixIconId(iconName.c_str(), iconId)) {
+    return payload;
+  }
+
+  const LedMatrixIconDefinition *icon = ledMatrixIconById(iconId);
+  if (icon == nullptr) {
+    return payload;
+  }
+
+  payload.icon = icon;
+  payload.message = iconMessage.length() > 0 ? iconMessage : icon->label;
+  return payload;
+}
+
+inline bool showOverridePayload(
+  const String &message,
+  const LedMatrixIconDefinition *icon,
+  uint8_t red,
+  uint8_t green,
+  uint8_t blue,
+  const char *unsupportedWarning
+) {
+  if (!currentEffect->supportsOverrides()) {
+    Serial.println(unsupportedWarning);
+    return false;
+  }
+
+  if (icon != nullptr) {
+    currentEffect->showIconMessage(matrix, *icon, message, red, green, blue);
+  } else {
+    currentEffect->showOverrideMessage(matrix, message, red, green, blue);
+  }
+  return true;
+}
 
 inline void applyEffectMode(LedMatrixEffectMode mode) {
   currentEffectMode = mode;
@@ -108,36 +173,33 @@ inline void applyEffectMode(LedMatrixEffectMode mode) {
   // Re-apply whichever override is currently active so the new effect
   // starts in the right state instead of reverting to the idle animation.
   if (manualOverrideActive && serialOverrideMessage.length() > 0) {
-    if (currentEffect->supportsOverrides()) {
-      currentEffect->showOverrideMessage(
-        matrix,
-        serialOverrideMessage,
-        serialOverrideRed,
-        serialOverrideGreen,
-        serialOverrideBlue
-      );
-    } else {
-      Serial.println("Aviso: efeito atual nao suporta overrides; override manual ignorado");
-    }
+    showOverridePayload(
+      serialOverrideMessage,
+      serialOverrideIcon,
+      serialOverrideRed,
+      serialOverrideGreen,
+      serialOverrideBlue,
+      "Aviso: efeito atual nao suporta overrides; override manual ignorado"
+    );
   } else if (homeAssistantOverrideActive && !manualOverrideActive &&
              homeAssistantMessage.length() > 0) {
-    if (currentEffect->supportsOverrides()) {
-      currentEffect->showOverrideMessage(
-        matrix,
-        homeAssistantMessage,
-        homeAssistantRed,
-        homeAssistantGreen,
-        homeAssistantBlue
-      );
-    } else {
-      Serial.println("Aviso: efeito atual nao suporta overrides; override HA ignorado");
-    }
+    showOverridePayload(
+      homeAssistantMessage,
+      homeAssistantIcon,
+      homeAssistantRed,
+      homeAssistantGreen,
+      homeAssistantBlue,
+      "Aviso: efeito atual nao suporta overrides; override HA ignorado"
+    );
   }
 }
 
 inline void printSerialHelp() {
   Serial.println("Comandos:");
   Serial.println("  TEXT:mensagem livre");
+  Serial.println("  ICON:nome[:mensagem]");
+  Serial.print("    nomes: ");
+  Serial.println(ledMatrixIconCommandList());
   Serial.println("  COLOR:r,g,b");
   Serial.println("  CLEAR");
   Serial.println("  BRIGHTNESS:n");
@@ -229,18 +291,44 @@ inline void processSerialCommand(String command) {
     const String message = command.substring(5);
     manualOverrideActive = true;
     serialOverrideMessage = message;
-    if (currentEffect->supportsOverrides()) {
-      currentEffect->showOverrideMessage(
-        matrix,
-        message,
-        serialOverrideRed,
-        serialOverrideGreen,
-        serialOverrideBlue
-      );
+    serialOverrideIcon = nullptr;
+    if (showOverridePayload(
+          message,
+          serialOverrideIcon,
+          serialOverrideRed,
+          serialOverrideGreen,
+          serialOverrideBlue,
+          "Aviso: efeito atual (CAT ONLY) nao exibe mensagens. Use EFFECT:playback primeiro."
+        )) {
       Serial.print("Override ativo: ");
       Serial.println(message);
-    } else {
-      Serial.println("Aviso: efeito atual (CAT ONLY) nao exibe mensagens. Use EFFECT:playback primeiro.");
+    }
+    return;
+  }
+
+  if (command.startsWith("ICON:")) {
+    const LedMatrixOverridePayload payload = resolveLedMatrixOverridePayload(command);
+    if (payload.icon == nullptr) {
+      Serial.print("Uso: ICON:nome[:mensagem]. Nomes: ");
+      Serial.println(ledMatrixIconCommandList());
+      return;
+    }
+
+    manualOverrideActive = true;
+    serialOverrideMessage = payload.message;
+    serialOverrideIcon = payload.icon;
+    if (showOverridePayload(
+          serialOverrideMessage,
+          serialOverrideIcon,
+          serialOverrideRed,
+          serialOverrideGreen,
+          serialOverrideBlue,
+          "Aviso: efeito atual (CAT ONLY) nao exibe icones/mensagens. Use EFFECT:playback primeiro."
+        )) {
+      Serial.print("Override com icone ativo: ");
+      Serial.print(serialOverrideIcon->name);
+      Serial.print(" -> ");
+      Serial.println(serialOverrideMessage);
     }
     return;
   }
@@ -290,18 +378,17 @@ inline void processSerialCommand(String command) {
   if (command == "CLEAR") {
     manualOverrideActive = false;
     serialOverrideMessage = "";
+    serialOverrideIcon = nullptr;
     if (homeAssistantOverrideActive) {
-      if (currentEffect->supportsOverrides()) {
-        currentEffect->showOverrideMessage(
-          matrix,
-          homeAssistantMessage,
-          homeAssistantRed,
-          homeAssistantGreen,
-          homeAssistantBlue
-        );
+      if (showOverridePayload(
+            homeAssistantMessage,
+            homeAssistantIcon,
+            homeAssistantRed,
+            homeAssistantGreen,
+            homeAssistantBlue,
+            "Aviso: override manual limpo, mas o efeito atual nao suporta override do Home Assistant"
+          )) {
         Serial.println("Override manual limpo; Home Assistant reassumiu");
-      } else {
-        Serial.println("Aviso: override manual limpo, mas o efeito atual nao suporta override do Home Assistant");
       }
     } else {
       currentEffect->clearOverrideMessage(matrix);
@@ -329,6 +416,8 @@ inline void processSerialCommand(String command) {
     printYesNo(manualOverrideActive);
     Serial.print("Mensagem serial ativa: ");
     Serial.println(serialOverrideMessage.length() > 0 ? serialOverrideMessage : "<vazia>");
+    Serial.print("Icone serial ativo: ");
+    Serial.println(serialOverrideIcon == nullptr ? "<nenhum>" : serialOverrideIcon->name);
     Serial.print("Override Home Assistant: ");
     printYesNo(homeAssistantOverrideActive);
     Serial.print("Cor serial atual: ");
@@ -345,6 +434,8 @@ inline void processSerialCommand(String command) {
     Serial.println(homeAssistantBlue);
     Serial.print("Mensagem Home Assistant ativa: ");
     Serial.println(homeAssistantMessage.length() > 0 ? homeAssistantMessage : "<vazia>");
+    Serial.print("Icone Home Assistant ativo: ");
+    Serial.println(homeAssistantIcon == nullptr ? "<nenhum>" : homeAssistantIcon->name);
     Serial.print("WiFi configurado: ");
     printYesNo(homeAssistantClient.wifiConfiguredForDiagnostics());
     Serial.print("WiFi gerenciado por cliente principal: ");
@@ -417,15 +508,14 @@ inline void handleHomeAssistant() {
     }
 
     if (homeAssistantOverrideActive && !manualOverrideActive && homeAssistantMessage.length() > 0) {
-      if (currentEffect->supportsOverrides()) {
-        currentEffect->showOverrideMessage(
-          matrix,
-          homeAssistantMessage,
-          homeAssistantRed,
-          homeAssistantGreen,
-          homeAssistantBlue
-        );
-      }
+      showOverridePayload(
+        homeAssistantMessage,
+        homeAssistantIcon,
+        homeAssistantRed,
+        homeAssistantGreen,
+        homeAssistantBlue,
+        "Aviso: efeito atual nao suporta overrides; override HA ignorado"
+      );
     }
   }
 
@@ -436,7 +526,14 @@ inline void handleHomeAssistant() {
   }
 
   homeAssistantOverrideActive = hasMessage;
-  homeAssistantMessage = hasMessage ? message : "";
+  if (hasMessage) {
+    const LedMatrixOverridePayload payload = resolveLedMatrixOverridePayload(message);
+    homeAssistantMessage = payload.message;
+    homeAssistantIcon = payload.icon;
+  } else {
+    homeAssistantMessage = "";
+    homeAssistantIcon = nullptr;
+  }
 
   if (manualOverrideActive) {
     Serial.println("Home Assistant atualizou, mas override manual continua prioritario");
@@ -444,15 +541,14 @@ inline void handleHomeAssistant() {
   }
 
   if (hasMessage) {
-    if (currentEffect->supportsOverrides()) {
-      currentEffect->showOverrideMessage(
-        matrix,
-        message,
-        homeAssistantRed,
-        homeAssistantGreen,
-        homeAssistantBlue
-      );
-    }
+    showOverridePayload(
+      homeAssistantMessage,
+      homeAssistantIcon,
+      homeAssistantRed,
+      homeAssistantGreen,
+      homeAssistantBlue,
+      "Aviso: efeito atual nao suporta overrides; override HA ignorado"
+    );
   } else {
     currentEffect->clearOverrideMessage(matrix);
   }

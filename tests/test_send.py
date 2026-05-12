@@ -159,6 +159,47 @@ def test_effect_command_rejects_unknown_name():
     mock_send.assert_not_called()
 
 
+def test_icon_command_sends_icon_with_message():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['icon', 'focus', 'FOCO TOTAL'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['ICON:focus:FOCO TOTAL'])
+
+
+def test_icon_command_with_color_sends_color_first():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['icon', '--color', '255,140,0', 'focus', 'FOCO'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['COLOR:255,140,0', 'ICON:focus:FOCO'])
+
+
+def test_icon_command_without_message_sends_icon_only():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['icon', 'status'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['ICON:status'])
+
+
+def test_icon_command_rejects_unknown_name():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port') as mock_detect, \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['icon', 'unknown'])
+    assert result.exit_code != 0
+    mock_detect.assert_not_called()
+    mock_send.assert_not_called()
+
+
 def test_brightness_command():
     runner = CliRunner()
     with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \

@@ -1,0 +1,79 @@
+ledmatrix8x8_clear:
+  alias: LED Matrix 8x8 - Limpar
+  mode: single
+  sequence:
+  - data:
+      value: ''
+    service: input_text.set_value
+    target:
+      entity_id: input_text.ledmatrix8x8_message
+  - data:
+      value: ''
+    service: input_text.set_value
+    target:
+      entity_id: input_text.ledmatrix8x8_color
+ledmatrix8x8_preset_break:
+  alias: LED Matrix 8x8 - Preset BREAK
+  mode: single
+  sequence:
+  - data:
+      color: 180,0,255
+      message: ICON:break:BREAK
+    service: script.ledmatrix8x8_set_message
+ledmatrix8x8_preset_call:
+  alias: LED Matrix 8x8 - Preset CALL
+  mode: single
+  sequence:
+  - data:
+      color: 0,180,255
+      message: ICON:call:CALL
+    service: script.ledmatrix8x8_set_message
+ledmatrix8x8_preset_done:
+  alias: LED Matrix 8x8 - Preset DONE
+  mode: single
+  sequence:
+  - data:
+      color: 0,255,160
+      message: ICON:status:DONE
+    service: script.ledmatrix8x8_set_message
+ledmatrix8x8_preset_error:
+  alias: LED Matrix 8x8 - Preset ERROR
+  mode: single
+  sequence:
+  - data:
+      color: 255,0,64
+      message: ICON:error:ERROR
+    service: script.ledmatrix8x8_set_message
+ledmatrix8x8_preset_foco:
+  alias: LED Matrix 8x8 - Preset FOCO
+  mode: single
+  sequence:
+  - data:
+      color: 255,140,0
+      message: ICON:focus:FOCO
+    service: script.ledmatrix8x8_set_message
+ledmatrix8x8_set_message:
+  alias: LED Matrix 8x8 - Definir mensagem
+  fields:
+    color:
+      description: Cor no formato r,g,b ou
+      name: Cor RGB
+      selector:
+        text: null
+    message:
+      description: Texto exibido na matriz 8x8.
+      name: Mensagem
+      selector:
+        text: null
+  mode: restart
+  sequence:
+  - data:
+      value: '{{ color if color is defined and color != '''' else ''0,255,160'' }}'
+    service: input_text.set_value
+    target:
+      entity_id: input_text.ledmatrix8x8_color
+  - data:
+      value: '{{ message if message is defined else '''' }}'
+    service: input_text.set_value
+    target:
+      entity_id: input_text.ledmatrix8x8_message

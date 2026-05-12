@@ -12,6 +12,9 @@ BAUD_RATE = 115200
 RESPONSE_TIMEOUT = 2.0
 SERIAL_OPEN_DELAY = 1.2
 RGB_PATTERN = re.compile(r'^\d{1,3},\d{1,3},\d{1,3}$')
+ICON_CHOICES = ['agenda', 'task', 'status', 'focus', 'call', 'break', 'error']
+MAX_TEXT_MESSAGE_LENGTH = 155
+MAX_ICON_MESSAGE_LENGTH = 148
 
 
 def _validate_rgb(rgb: str) -> None:
@@ -81,9 +84,9 @@ def text(ctx, message, color):
         else:
             raise click.UsageError("Forneça texto como argumento ou via stdin")
 
-    if len(message) > 155:
+    if len(message) > MAX_TEXT_MESSAGE_LENGTH:
         raise click.UsageError(
-            f"mensagem muito longa ({len(message)} chars). Máximo: 155"
+            f"mensagem muito longa ({len(message)} chars). Máximo: {MAX_TEXT_MESSAGE_LENGTH}"
         )
 
     port = ctx.obj['port'] or auto_detect_port()
@@ -91,6 +94,33 @@ def text(ctx, message, color):
     if color:
         commands.append(f'COLOR:{color}')
     commands.append(f'TEXT:{message}')
+    send_and_receive(port, commands)
+
+
+@cli.command()
+@click.argument('name', type=click.Choice(ICON_CHOICES, case_sensitive=False))
+@click.argument('message', required=False)
+@click.option('--color', default=None, help='Cor RGB: r,g,b (ex: 255,140,0)')
+@click.pass_context
+def icon(ctx, name, message, color):
+    """Envia ICON:nome[:mensagem] para o device."""
+    if color is not None:
+        _validate_rgb(color)
+
+    if message is not None and len(message) > MAX_ICON_MESSAGE_LENGTH:
+        raise click.UsageError(
+            f"mensagem muito longa ({len(message)} chars). Máximo: {MAX_ICON_MESSAGE_LENGTH}"
+        )
+
+    port = ctx.obj['port'] or auto_detect_port()
+    commands = []
+    if color:
+        commands.append(f'COLOR:{color}')
+    icon_name = name.lower()
+    command = f'ICON:{icon_name}'
+    if message:
+        command = f'{command}:{message}'
+    commands.append(command)
     send_and_receive(port, commands)
 
 

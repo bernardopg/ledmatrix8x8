@@ -1,0 +1,10 @@
+# Home Assistant helpers used by the ESP32 firmware.
+# Add this under the top-level `input_text:` key in configuration.yaml,
+# or merge the two helper entries if that key already exists.
+input_text:
+  ledmatrix8x8_message:
+    name: LED Matrix 8x8 Message
+    max: 120
+  ledmatrix8x8_color:
+    name: LED Matrix 8x8 Color
+    max: 16

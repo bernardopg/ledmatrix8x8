@@ -18,14 +18,6 @@
     {
       "text": "Olá, eu sou o Klein, seu gato assistente virtual",
       "color": [255, 140, 0]
-    },
-    {
-      "text": "Kanban: proxima tarefa",
-      "color": [0, 180, 255]
-    },
-    {
-      "text": "Obsidian: revisar notas",
-      "color": [180, 0, 255]
     }
   ]
 }

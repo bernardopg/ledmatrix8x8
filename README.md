@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Current%20state-Build%20verified-16A34A?style=flat-square" alt="Build verified" />
+  <img src="https://img.shields.io/badge/Current%20state-Hardware%20%2B%20HA%20smoke%20verified-16A34A?style=flat-square" alt="Hardware and Home Assistant smoke verified" />
   <img src="https://img.shields.io/badge/Visual%20direction-Hardware%20badge%20with%20personality-0F766E?style=flat-square" alt="Hardware badge with personality" />
   <img src="https://img.shields.io/badge/Code%20style-Core%20%2B%20Effects%20%2B%20App-334155?style=flat-square" alt="Core + Effects + App" />
 </p>
@@ -44,17 +44,22 @@ The goal is no longer a throwaway test sketch. It is now a compact hardware arti
   <img src="./docs/assets/cat-preview.svg" alt="Cat effect visual preview" width="900" />
 </p>
 
+<p align="center">
+  <img src="./docs/assets/status-icons.svg" alt="Status icon presets visual preview" width="900" />
+</p>
+
 ## Current Snapshot
 
 | Item | Status |
 | --- | --- |
 | Current deployed effect | Animated cat face + scrolling text |
-| Validation status | `make check` green |
+| Validation status | `make check` green + ESP32/HA smoke test green |
 | Device target | `ESP32-S3-DevKitC-1` |
 | LED matrix | `WS2812B 8x8` |
 | Data pin | `GPIO38` |
 | Build system | `PlatformIO` |
 | Firmware style | Local library-based effects |
+| Home Assistant control | Helpers, Lovelace view, scripts and presets validated in the homelab |
 
 ## Architecture / Schema
 
@@ -66,6 +71,7 @@ flowchart LR
   E["LedMatrixCore"] --> D
   E2["LedMatrixFirmwareCommands"] --> D
   E3["LedMatrixMessagePriority"] --> D
+  E4["LedMatrixIcons"] --> D
   F["LedMatrixEffect"] --> G["CatAnimationEffect"]
   H["LedMatrixText"] --> I["CatMessagePlaybackEffect"]
   G --> I
@@ -93,6 +99,7 @@ pie showData title Current project emphasis
 | Color parser | `lib/LedMatrixCore/src/LedMatrixColorParser.h` | Parses `r,g,b` and `#RRGGBB` color strings |
 | Firmware commands | `lib/LedMatrixCore/src/LedMatrixFirmwareCommands.h` | Parses BRIGHTNESS/EFFECT commands; formats HA error summaries |
 | Message priority | `lib/LedMatrixCore/src/LedMatrixMessagePriority.h` | Resolves Serial > HomeAssistant > Config source priority |
+| Status icons | `lib/LedMatrixCore/src/LedMatrixIcons.h` | Defines 8x8 icon presets, labels, default colors and aliases |
 | Effect contract | `lib/LedMatrixEffects/src/LedMatrixEffect.h` | Common interface for importable effects |
 | Cat effect | `lib/LedMatrixEffects/src/CatAnimation.h` | Animated pixel cat library |
 | Text lib | `lib/LedMatrixText/src/TextMarquee.h` | 5x7 sprite marquee with editable message text |
@@ -154,6 +161,7 @@ Com o firmware rodando, voce pode controlar tudo sem reflash pelo monitor serial
 
 ```text
 TEXT:Olá, eu sou o Klein
+ICON:focus:FOCO TOTAL
 COLOR:255,140,0
 BRIGHTNESS:80
 EFFECT:cat
@@ -166,7 +174,8 @@ HELP
 Regras:
 
 - `TEXT:mensagem` ativa um override temporario e exibe essa mensagem no letreiro.
-- `COLOR:r,g,b` define a cor usada no proximo `TEXT:`; cada componente deve estar entre `0` e `255`.
+- `ICON:nome[:mensagem]` mostra um icone 8x8 por ~1,2s antes do texto; nomes canonicos: `agenda`, `task`, `status`, `focus`, `call`, `break`, `error`.
+- `COLOR:r,g,b` define a cor usada no proximo `TEXT:` ou `ICON:`; cada componente deve estar entre `0` e `255`.
 - `BRIGHTNESS:n` ajusta o brilho imediatamente (0–255) sem reflash.
 - `EFFECT:cat` troca para o modo so-gato (sem marquee). `EFFECT:playback` volta ao modo normal.
 - `CLEAR` remove o override manual. Se o Home Assistant tiver mensagem ativa, ele reassume com a cor HA atual; se nao tiver, volta para o `config.yaml`.
@@ -181,6 +190,7 @@ make status PORT=/dev/ttyACM0
 
 # ou via script direto (porta auto-detectada se omitida):
 .venv/bin/python scripts/send.py text --color 255,140,0 "Ola Klein"
+.venv/bin/python scripts/send.py icon --color 255,140,0 focus "FOCO TOTAL"
 .venv/bin/python scripts/send.py brightness 80
 .venv/bin/python scripts/send.py effect cat
 .venv/bin/python scripts/send.py clear
@@ -215,10 +225,18 @@ Fluxo:
 3. Faça upload do firmware.
 4. Quando o helper de mensagem mudar, a matriz assume essa mensagem.
 5. Quando o helper de cor mudar, a matriz aceita `r,g,b` (`0,255,160`) ou hexadecimal (`#00FFA0`).
+6. O helper de mensagem tambem aceita o prefixo `ICON:nome:mensagem` para exibir um icone 8x8 antes do letreiro.
+
+Dashboard/presets usados no homelab:
+
+- A view Lovelace `LED Matrix` controla os dois helpers, tem botoes de limpar/restaurar cor padrao e exibe diagnostico rapido do firmware.
+- Os scripts `script.ledmatrix8x8_preset_foco`, `script.ledmatrix8x8_preset_call`, `script.ledmatrix8x8_preset_done`, `script.ledmatrix8x8_preset_break` e `script.ledmatrix8x8_preset_error` escrevem mensagens curtas nos helpers usando `ICON:focus:FOCO`, `ICON:call:CALL`, `ICON:status:DONE`, `ICON:break:BREAK` e `ICON:error:ERROR`.
+- O poll configurado e `5000 ms`, entao aguarde mais de 5 segundos antes de confirmar a mudanca com `make status PORT=/dev/ttyACM0`.
 
 Observacoes:
 
-- O override manual por `TEXT:` continua com prioridade sobre o Home Assistant.
+- Prioridade de fontes: Serial (`TEXT:`/`ICON:`) > Home Assistant > `config.yaml`.
+- O override manual por `TEXT:` ou `ICON:` continua com prioridade sobre o Home Assistant.
 - Se o helper de mensagem ficar vazio, a matriz volta para o playback padrao do `config.yaml`.
 - Se o helper de cor ficar vazio, `unknown`, `unavailable` ou invalido, a matriz volta para a cor HA padrao do `config.yaml`.
 - `STATUS` e o log serial ajudam a diagnosticar Wi-Fi, HTTP e o ultimo estado recebido.

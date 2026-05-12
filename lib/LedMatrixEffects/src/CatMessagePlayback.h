@@ -4,6 +4,7 @@
 
 #include <CatAnimation.h>
 #include <LedMatrixEffect.h>
+#include <LedMatrixIcons.h>
 #include <LedMatrixTextTypes.h>
 #include <TextMarquee.h>
 
@@ -45,7 +46,14 @@ class CatMessagePlaybackEffect : public LedMatrixEffect {
       case PlaybackState::kCat:
         cat_.update(matrix);
         if ((millis() - stateStartedAtMs_) >= catDisplayDurationMs()) {
-          beginCurrentMessage(matrix);
+          beginCurrentPlayback(matrix);
+        }
+        break;
+
+      case PlaybackState::kIcon:
+        renderIcon(matrix);
+        if ((millis() - stateStartedAtMs_) >= iconDisplayDurationMs_) {
+          beginCurrentTextMessage(matrix);
         }
         break;
 
@@ -78,6 +86,7 @@ class CatMessagePlaybackEffect : public LedMatrixEffect {
     overrideColor_.green = green;
     overrideColor_.blue = blue;
     overrideEnabled_ = true;
+    activeIcon_ = nullptr;
 
     marquee_.setMessage(overrideText_);
     marquee_.setColor(matrix.color(red, green, blue));
@@ -85,20 +94,40 @@ class CatMessagePlaybackEffect : public LedMatrixEffect {
     state_ = PlaybackState::kMessage;
   }
 
-  void clearOverrideMessage(LedMatrixCore &matrix) {
+  void showIconMessage(
+    LedMatrixCore &matrix,
+    const LedMatrixIconDefinition &icon,
+    const String &message,
+    uint8_t red,
+    uint8_t green,
+    uint8_t blue
+  ) override {
+    overrideText_ = message.length() > 0 ? message : icon.label;
+    overrideColor_.text = overrideText_.c_str();
+    overrideColor_.red = red;
+    overrideColor_.green = green;
+    overrideColor_.blue = blue;
+    overrideEnabled_ = true;
+    activeIcon_ = &icon;
+    beginIcon(matrix);
+  }
+
+  void clearOverrideMessage(LedMatrixCore &matrix) override {
     overrideEnabled_ = false;
     overrideText_ = "";
     overrideColor_.text = nullptr;
+    activeIcon_ = nullptr;
     restartCat(matrix);
   }
 
-  bool hasOverrideMessage() const {
+  bool hasOverrideMessage() const override {
     return overrideEnabled_;
   }
 
  private:
   enum class PlaybackState {
     kCat,
+    kIcon,
     kMessage
   };
 
@@ -114,7 +143,39 @@ class CatMessagePlaybackEffect : public LedMatrixEffect {
     cat_.begin(matrix);
   }
 
-  void beginCurrentMessage(LedMatrixCore &matrix) {
+  void beginIcon(LedMatrixCore &matrix) {
+    state_ = PlaybackState::kIcon;
+    stateStartedAtMs_ = millis();
+    renderIcon(matrix);
+  }
+
+  void renderIcon(LedMatrixCore &matrix) {
+    if (activeIcon_ == nullptr) {
+      beginCurrentTextMessage(matrix);
+      return;
+    }
+
+    matrix.clear();
+    const uint32_t colorValue = matrix.color(
+      overrideColor_.red,
+      overrideColor_.green,
+      overrideColor_.blue
+    );
+    for (uint8_t y = 0; y < 8; y++) {
+      matrix.drawMaskRow(y, activeIcon_->rows[y], colorValue);
+    }
+    matrix.show();
+  }
+
+  void beginCurrentPlayback(LedMatrixCore &matrix) {
+    if (overrideEnabled_ && activeIcon_ != nullptr) {
+      beginIcon(matrix);
+      return;
+    }
+    beginCurrentTextMessage(matrix);
+  }
+
+  void beginCurrentTextMessage(LedMatrixCore &matrix) {
     const LedMatrixTextMessage &message =
       overrideEnabled_ ? overrideColor_ : messages_[currentMessageIndex_];
 
@@ -135,5 +196,7 @@ class CatMessagePlaybackEffect : public LedMatrixEffect {
   PlaybackState state_ = PlaybackState::kCat;
   String overrideText_;
   LedMatrixTextMessage overrideColor_ = {nullptr, 255, 255, 255};
+  const LedMatrixIconDefinition *activeIcon_ = nullptr;
+  uint16_t iconDisplayDurationMs_ = 1200;
   bool overrideEnabled_ = false;
 };

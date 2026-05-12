@@ -1,54 +1,55 @@
 {
+  "editor.formatOnSave": false,
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": false,
+  "C_Cpp.clang_format_style": "file",
+  "C_Cpp.formatting": "clangFormat",
+  "[cpp]": {
     "editor.formatOnSave": false,
-    "editor.formatOnPaste": false,
-    "editor.formatOnType": false,
-    "C_Cpp.clang_format_style": "file",
-    "C_Cpp.formatting": "clangFormat",
-    "[cpp]": {
-        "editor.formatOnSave": false,
-        "editor.defaultFormatter": "ms-vscode.cpptools"
-    },
-    "[c]": {
-        "editor.formatOnSave": false,
-        "editor.defaultFormatter": "ms-vscode.cpptools"
-    },
-    "files.associations": {
-        "*.ino": "cpp"
-    },
-    "go.lintOnSave": "off",
-    "go.lintTool": "golangci-lint",
-    "go.lintFlags": [],
-    "go.vetOnSave": "off",
-    "go.buildOnSave": "off",
-    "go.testOnSave": false,
-    "go.coverOnSave": false,
-    "go.coverageDecorator": {
-        "backgroundColor": "rgba(127,201,0,0.1)"
-    },
-    "go.useLanguageServer": true,
-    "go.languageServerFlags": [],
-    "go.useCodeSnippetsOnFunctionSuggest": false,
-    "go.useCodeSnippetsOnFunctionSuggestWithoutType": false,
-    "go.autocompleteUnimportedPackages": false,
-    "go.gotoSymbolIncludeImports": false,
-    "go.gotoSymbolIncludeGoroot": false,
-    "[go]": {
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSaveTimeout": 3000
-    },
-    "[go.mod]": {
-        "editor.formatOnSave": true
-    },
-    "[ignore]": {
-        "editor.defaultFormatter": "foxundermoon.shell-format"
-    },
-    "isort.importStrategy": "fromEnvironment",
-    "isort.interpreter": [
-        "${workspaceFolder}/.venv/bin/python"
-    ],
-    "go.liveErrors": {
-        "enabled": false,
-        "delay": 500
-    },
-    "go.diagnostic.vulncheck": "off"
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "[c]": {
+    "editor.formatOnSave": false,
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "files.associations": {
+    "*.ino": "cpp"
+  },
+  "go.lintOnSave": "off",
+  "go.lintTool": "golangci-lint",
+  "go.lintFlags": [],
+  "go.vetOnSave": "off",
+  "go.buildOnSave": "off",
+  "go.testOnSave": false,
+  "go.coverOnSave": false,
+  "go.coverageDecorator": {
+    "backgroundColor": "rgba(127,201,0,0.1)"
+  },
+  "go.useLanguageServer": true,
+  "go.languageServerFlags": [],
+  "go.useCodeSnippetsOnFunctionSuggest": false,
+  "go.useCodeSnippetsOnFunctionSuggestWithoutType": false,
+  "go.autocompleteUnimportedPackages": false,
+  "go.gotoSymbolIncludeImports": false,
+  "go.gotoSymbolIncludeGoroot": false,
+  "[go]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSaveTimeout": 3000
+  },
+  "[go.mod]": {
+    "editor.formatOnSave": true
+  },
+  "[ignore]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
+  "isort.importStrategy": "fromEnvironment",
+  "isort.interpreter": [
+    "${workspaceFolder}/.venv/bin/python"
+  ],
+  "go.liveErrors": {
+    "enabled": false,
+    "delay": 500
+  },
+  "go.diagnostic.vulncheck": "off",
+  "idf.customExtraVars": {}
 }

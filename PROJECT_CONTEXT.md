@@ -27,6 +27,8 @@ Um display 8x8 e extremamente limitado. Se o firmware for pensado apenas como de
 - Comandos serial para override rapido
 - Animacao de gato com quadros simples de idle/blink/happy como camada de personalidade
 - Integracao opcional com Home Assistant via REST para override remoto
+- Dashboard Lovelace no Home Assistant para helpers, presets rapidos e diagnostico de uso diario
+- Icones 8x8 de estado que podem ser acionados por `ICON:nome[:mensagem]` via Serial ou Home Assistant
 
 ## Nao objetivos por enquanto
 
@@ -76,12 +78,17 @@ Motivo:
 
 ## Roadmap util
 
-### Curto prazo
+### Ja validado
 
 - validar no hardware real o novo `STATUS` expandido
+- validar e2e Home Assistant -> ESP32 com mensagem e cor
+- validar precedencia Serial > Home Assistant > `config.yaml`
+- presets de mensagem por contexto no Home Assistant
+
+### Curto prazo
+
 - suporte a mais sprites e estados visuais do gato
-- presets de mensagem por contexto
-- testes host-side para regras de prioridade Serial/Home Assistant/config
+- refinar a composicao entre icones 8x8, mensagens e presets reais de agenda/tarefa/status
 
 ### Medio prazo
 
