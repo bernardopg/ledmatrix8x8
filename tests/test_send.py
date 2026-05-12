@@ -128,6 +128,58 @@ def test_color_command():
         mock_send.assert_called_once_with('/dev/ttyACM0', ['COLOR:255,140,0'])
 
 
+def test_effect_command():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['effect', 'playback'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['EFFECT:playback'])
+
+
+def test_effect_command_cat():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['effect', 'cat'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['EFFECT:cat'])
+
+
+def test_effect_command_rejects_unknown_name():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port') as mock_detect, \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['effect', 'unknown'])
+    assert result.exit_code != 0
+    mock_detect.assert_not_called()
+    mock_send.assert_not_called()
+
+
+def test_brightness_command():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port', return_value='/dev/ttyACM0'), \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['brightness', '80'])
+        assert result.exit_code == 0
+        mock_send.assert_called_once_with('/dev/ttyACM0', ['BRIGHTNESS:80'])
+
+
+def test_brightness_command_rejects_out_of_range():
+    runner = CliRunner()
+    with patch('scripts.send.auto_detect_port') as mock_detect, \
+         patch('scripts.send.send_and_receive') as mock_send:
+        from scripts.send import cli
+        result = runner.invoke(cli, ['brightness', '256'])
+    assert result.exit_code != 0
+    mock_detect.assert_not_called()
+    mock_send.assert_not_called()
+
+
 def test_color_rejects_values_above_byte_range():
     runner = CliRunner()
     with patch('scripts.send.auto_detect_port') as mock_detect, \

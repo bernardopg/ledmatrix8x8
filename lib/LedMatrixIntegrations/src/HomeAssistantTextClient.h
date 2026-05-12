@@ -6,6 +6,7 @@
 #include <WiFi.h>
 
 #include <ArduinoJson.h>
+#include <LedMatrixFirmwareCommands.h>
 
 class HomeAssistantTextClient {
  public:
@@ -150,6 +151,10 @@ class HomeAssistantTextClient {
     return lastMessage_;
   }
 
+  const String &lastErrorSummary() const {
+    return lastErrorSummary_;
+  }
+
   bool consumeStateChange(bool &hasMessage, String &message) {
     if (!hasPendingUpdate_) {
       return false;
@@ -249,6 +254,7 @@ class HomeAssistantTextClient {
 
     if (!http.begin(client, url)) {
       lastHttpStatus_ = 0;
+      lastErrorSummary_ = "HTTP begin";
       Serial.println("Falha ao iniciar cliente HTTP do Home Assistant");
       return;
     }
@@ -259,10 +265,11 @@ class HomeAssistantTextClient {
     http.addHeader("Connection", "close");
 
     const int statusCode = http.GET();
-    lastHttpStatus_ = statusCode;
     if (statusCode != HTTP_CODE_OK) {
       Serial.print("Home Assistant HTTP status: ");
       Serial.println(statusCode);
+      lastHttpStatus_ = statusCode;
+      lastErrorSummary_ = formatLedMatrixHomeAssistantErrorSummary(statusCode, nullptr).c_str();
       http.end();
       return;
     }
@@ -274,8 +281,13 @@ class HomeAssistantTextClient {
     if (error) {
       Serial.print("Falha ao parsear JSON do Home Assistant: ");
       Serial.println(error.c_str());
+      lastHttpStatus_ = statusCode;
+      lastErrorSummary_ = formatLedMatrixHomeAssistantErrorSummary(statusCode, error.c_str()).c_str();
       return;
     }
+
+    lastHttpStatus_ = statusCode;
+    lastErrorSummary_.clear();
 
     const String nextMessage = document["state"] | "";
     const bool nextHasMessage = (
@@ -288,14 +300,24 @@ class HomeAssistantTextClient {
       return;
     }
 
+    const bool clearedToEmpty = (!nextHasMessage && lastHasMessage_);
+    const bool changedToNewMessage = (nextHasMessage && nextMessage != lastMessage_);
+
     lastHasMessage_ = nextHasMessage;
     lastMessage_ = nextMessage;
     pendingHasMessage_ = nextHasMessage;
     pendingMessage_ = nextHasMessage ? nextMessage : "";
     hasPendingUpdate_ = true;
 
-    Serial.print("Home Assistant atualizou mensagem: ");
-    Serial.println(nextHasMessage ? nextMessage : "<vazia>");
+    if (clearedToEmpty) {
+      Serial.println("Home Assistant limpou mensagem");
+    } else if (changedToNewMessage) {
+      Serial.print("Home Assistant atualizou mensagem: ");
+      Serial.println(nextMessage);
+    } else {
+      Serial.print("Home Assistant atualizou mensagem: ");
+      Serial.println(nextHasMessage ? nextMessage : "<vazia>");
+    }
   }
 
   String wifiSsid_;
@@ -313,6 +335,7 @@ class HomeAssistantTextClient {
   uint32_t lastWifiAttemptAtMs_ = 0;
   uint32_t lastPollAtMs_ = 0;
   int lastHttpStatus_ = 0;
+  String lastErrorSummary_;
   String lastMessage_;
   String pendingMessage_;
   bool wifiConnectStarted_ = false;

@@ -113,6 +113,24 @@ def clear(ctx):
 
 
 @cli.command()
+@click.argument('value', type=click.IntRange(0, 255))
+@click.pass_context
+def brightness(ctx, value):
+    """Envia BRIGHTNESS:n para o device."""
+    port = ctx.obj['port'] or auto_detect_port()
+    send_and_receive(port, [f'BRIGHTNESS:{value}'])
+
+
+@cli.command()
+@click.argument('name', type=click.Choice(['cat', 'playback'], case_sensitive=False))
+@click.pass_context
+def effect(ctx, name):
+    """Envia EFFECT:nome para o device. Valores: cat, playback."""
+    port = ctx.obj['port'] or auto_detect_port()
+    send_and_receive(port, [f'EFFECT:{name}'])
+
+
+@cli.command()
 @click.pass_context
 def status(ctx):
     """Envia STATUS para o device e exibe resposta."""

@@ -13,6 +13,8 @@
 #include <HomeAssistantTextClient.h>
 #include <LedMatrixColorParser.h>
 #include <LedMatrixCore.h>
+#include <LedMatrixFirmwareCommands.h>
+#include <LedMatrixMessagePriority.h>
 
 #if __has_include("ledmatrix8x8_secrets.h")
 #include "ledmatrix8x8_secrets.h"
@@ -37,7 +39,8 @@ static LedMatrixCore matrix(
   ORIGIN_BOTTOM
 );
 
-static CatMessagePlaybackEffect currentEffect(
+static CatAnimationEffect catOnlyEffect(PROJECT_CAT_FRAME_MS);
+static CatMessagePlaybackEffect catMessageEffect(
   PROJECT_CAT_FRAME_MS,
   PROJECT_CAT_LOOPS,
   PROJECT_SCROLL_STEP_MS,
@@ -45,6 +48,18 @@ static CatMessagePlaybackEffect currentEffect(
   PROJECT_MESSAGES,
   PROJECT_MESSAGE_COUNT
 );
+static LedMatrixEffectMode currentEffectMode = LedMatrixEffectMode::kCatMessagePlayback;
+static LedMatrixEffect *currentEffect = &catMessageEffect;
+
+inline void applyEffectMode(LedMatrixEffectMode mode) {
+  currentEffectMode = mode;
+  if (mode == LedMatrixEffectMode::kCatOnly) {
+    currentEffect = &catOnlyEffect;
+  } else {
+    currentEffect = &catMessageEffect;
+  }
+  currentEffect->begin(matrix);
+}
 
 static HomeAssistantTextClient homeAssistantClient(
   LEDMATRIX_WIFI_SSID,
@@ -88,12 +103,15 @@ static String homeAssistantMessage;
 static uint8_t homeAssistantRed = PROJECT_HA_COLOR_RED;
 static uint8_t homeAssistantGreen = PROJECT_HA_COLOR_GREEN;
 static uint8_t homeAssistantBlue = PROJECT_HA_COLOR_BLUE;
+static uint8_t runtimeBrightness = PROJECT_BRIGHTNESS;
 
 inline void printSerialHelp() {
   Serial.println("Comandos:");
   Serial.println("  TEXT:mensagem livre");
   Serial.println("  COLOR:r,g,b");
   Serial.println("  CLEAR");
+  Serial.println("  BRIGHTNESS:n");
+  Serial.println("  EFFECT:cat|playback");
   Serial.println("  STATUS");
   Serial.println("  HELP");
 }
@@ -132,13 +150,10 @@ inline void printYesNo(bool value) {
 }
 
 inline const char *currentMessageSource() {
-  if (manualOverrideActive) {
-    return "SERIAL";
-  }
-  if (homeAssistantOverrideActive) {
-    return "HOME_ASSISTANT";
-  }
-  return "CONFIG";
+  return ledMatrixMessageSourceLabel(resolveLedMatrixMessageSource(
+    manualOverrideActive,
+    homeAssistantOverrideActive
+  ));
 }
 
 inline void printLastPoll(const HomeAssistantTextClient &client) {
@@ -164,6 +179,9 @@ inline void printClientDiagnostics(
   Serial.print(" ultimo HTTP: ");
   Serial.println(client.lastHttpStatus());
   Serial.print(label);
+  Serial.print(" ultimo erro: ");
+  Serial.println(client.lastErrorSummary().length() > 0 ? client.lastErrorSummary() : "<nenhum>");
+  Serial.print(label);
   Serial.print(" ultimo poll: ");
   printLastPoll(client);
   Serial.print(label);
@@ -180,7 +198,7 @@ inline void processSerialCommand(String command) {
   if (command.startsWith("TEXT:")) {
     const String message = command.substring(5);
     manualOverrideActive = true;
-    currentEffect.showOverrideMessage(
+    currentEffect->showOverrideMessage(
       matrix,
       message,
       serialOverrideRed,
@@ -207,10 +225,37 @@ inline void processSerialCommand(String command) {
     return;
   }
 
+  if (command.startsWith("BRIGHTNESS:")) {
+    const String payload = command.substring(11);
+    uint8_t brightness = runtimeBrightness;
+    if (parseLedMatrixBrightnessValue(payload.c_str(), brightness)) {
+      runtimeBrightness = brightness;
+      matrix.setBrightness(runtimeBrightness);
+      Serial.print("Brightness ajustado: ");
+      Serial.println(runtimeBrightness);
+    } else {
+      Serial.println("Uso: BRIGHTNESS:0..255");
+    }
+    return;
+  }
+
+  if (command.startsWith("EFFECT:")) {
+    const String payload = command.substring(7);
+    LedMatrixEffectMode effectMode = currentEffectMode;
+    if (parseLedMatrixEffectMode(payload.c_str(), effectMode)) {
+      applyEffectMode(effectMode);
+      Serial.print("Efeito ajustado: ");
+      Serial.println(currentEffect->name());
+    } else {
+      Serial.println("Uso: EFFECT:cat|playback");
+    }
+    return;
+  }
+
   if (command == "CLEAR") {
     manualOverrideActive = false;
     if (homeAssistantOverrideActive) {
-      currentEffect.showOverrideMessage(
+      currentEffect->showOverrideMessage(
         matrix,
         homeAssistantMessage,
         homeAssistantRed,
@@ -219,7 +264,7 @@ inline void processSerialCommand(String command) {
       );
       Serial.println("Override manual limpo; Home Assistant reassumiu");
     } else {
-      currentEffect.clearOverrideMessage(matrix);
+      currentEffect->clearOverrideMessage(matrix);
       Serial.println("Override limpo; voltando ao config.yaml");
     }
     return;
@@ -233,11 +278,13 @@ inline void processSerialCommand(String command) {
     Serial.print(millis());
     Serial.println(" ms");
     Serial.print("Efeito atual: ");
-    Serial.println(currentEffect.name());
+    Serial.println(currentEffect->name());
+    Serial.print("Effect mode: ");
+    Serial.println(currentEffectMode == LedMatrixEffectMode::kCatOnly ? "CAT ONLY" : "CAT + MARQUEE");
     Serial.print("Brightness: ");
-    Serial.println(PROJECT_BRIGHTNESS);
+    Serial.println(runtimeBrightness);
     Serial.print("Override efetivo: ");
-    printYesNo(currentEffect.hasOverrideMessage());
+    printYesNo(currentEffect->hasOverrideMessage());
     Serial.print("Override manual: ");
     printYesNo(manualOverrideActive);
     Serial.print("Override Home Assistant: ");
@@ -328,7 +375,7 @@ inline void handleHomeAssistant() {
     }
 
     if (homeAssistantOverrideActive && !manualOverrideActive && homeAssistantMessage.length() > 0) {
-      currentEffect.showOverrideMessage(
+      currentEffect->showOverrideMessage(
         matrix,
         homeAssistantMessage,
         homeAssistantRed,
@@ -353,7 +400,7 @@ inline void handleHomeAssistant() {
   }
 
   if (hasMessage) {
-    currentEffect.showOverrideMessage(
+    currentEffect->showOverrideMessage(
       matrix,
       message,
       homeAssistantRed,
@@ -361,7 +408,7 @@ inline void handleHomeAssistant() {
       homeAssistantBlue
     );
   } else {
-    currentEffect.clearOverrideMessage(matrix);
+    currentEffect->clearOverrideMessage(matrix);
   }
 }
 
@@ -370,18 +417,19 @@ inline void ledmatrix8x8Setup() {
   delay(1200);
 
   matrix.begin(PROJECT_BRIGHTNESS);
+  runtimeBrightness = PROJECT_BRIGHTNESS;
 
   Serial.println();
   Serial.println("==== LEDMATRIX8X8 ====");
   Serial.print("Efeito atual: ");
-  Serial.println(currentEffect.name());
+  Serial.println(currentEffect->name());
   Serial.print("Brightness: ");
-  Serial.println(PROJECT_BRIGHTNESS);
+  Serial.println(runtimeBrightness);
   Serial.print("Target HA base URL: ");
   Serial.println(LEDMATRIX_HA_BASE_URL);
   printSerialHelp();
 
-  currentEffect.begin(matrix);
+  currentEffect->begin(matrix);
   homeAssistantClient.begin();
   homeAssistantColorClient.begin();
 }
@@ -389,5 +437,5 @@ inline void ledmatrix8x8Setup() {
 inline void ledmatrix8x8Loop() {
   handleSerialInput();
   handleHomeAssistant();
-  currentEffect.update(matrix);
+  currentEffect->update(matrix);
 }

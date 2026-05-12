@@ -11,19 +11,29 @@
 - [x] Adicionar `Makefile` para comandos padronizados de build/test/upload/status.
 - [x] Adicionar workflow de CI com pytest, mypy, isort e PlatformIO build.
 - [x] Atualizar documentacao para refletir Wi-Fi/HA e entidade de cor.
+- [x] Extrair logica de prioridade de fonte para `LedMatrixMessagePriority.h` com testes.
+- [x] Extrair parsers de firmware (brightness, effect mode, erro HA) para `LedMatrixFirmwareCommands.h` com testes.
+- [x] Adicionar comando `BRIGHTNESS:n` para ajuste rapido sem reflash.
+- [x] Adicionar comando `EFFECT:cat|playback` para alternar efeito em runtime.
+- [x] Expor no `STATUS` o ultimo erro HTTP/JSON de forma legivel e resumida.
+- [x] Adicionar `CatAnimationEffect` separado para modo sem marquee.
+- [x] Fazer upload no ESP32 e validar `STATUS`, `COLOR`, `TEXT`, `BRIGHTNESS`, `EFFECT` e `CLEAR` com o firmware mais recente.
+- [x] Validar no Home Assistant real que mensagem e cor atualizam independentemente.
+
+## Rotina de validacao
+
+- [ ] Manter `make check` verde antes de commits relevantes.
 
 ## Prioridade 0 - manter verde
 
-- [ ] Rodar `make check` antes de cada commit relevante.
-- [ ] Fazer upload no ESP32 e validar `STATUS`, `COLOR`, `TEXT` e `CLEAR` no hardware real.
-- [ ] Validar no Home Assistant real que mensagem e cor atualizam independentemente.
+- [ ] Adicionar testes para `BRIGHTNESS` e `EFFECT` no `test_send.py` (brightness_command, effect_invalid_noop).
+- [ ] Adicionar teste host-side para `parseLedMatrixEffectMode("CAT-ONLY", ...)` com hifem (alias nao coberto).
 
 ## Prioridade 1 - robustez do firmware
 
-- [ ] Adicionar testes host-side para regras de prioridade: Serial > Home Assistant > config.yaml.
-- [ ] Expor no `STATUS` o tempo desde o ultimo poll e talvez o ultimo erro HTTP/JSON como texto.
-- [ ] Adicionar comando `BRIGHTNESS:n` para ajuste rapido sem reflash.
-- [ ] Adicionar comando `EFFECT:nome` quando existir mais de um efeito ativo.
+- [ ] Fazer `LedMatrixEffect::supportsOverrides()` ser usado pelo app: se o efeito ativo nao suporta override, logar aviso ao inves de chamar silenciosamente.
+- [ ] Garantir que `EFFECT:cat` limpa o override ativo antes de trocar (para evitar estado inconsistente entre o ponteiro de efeito e `manualOverrideActive`).
+- [ ] Adicionar reset de override quando `EFFECT:` muda o efeito (o override manual pode apontar para o efeito anterior).
 
 ## Prioridade 2 - experiencia visual
 

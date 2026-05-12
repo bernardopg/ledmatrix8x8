@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Current%20state-Flashed%20and%20running-16A34A?style=flat-square" alt="Flashed and running" />
+  <img src="https://img.shields.io/badge/Current%20state-Build%20verified-16A34A?style=flat-square" alt="Build verified" />
   <img src="https://img.shields.io/badge/Visual%20direction-Hardware%20badge%20with%20personality-0F766E?style=flat-square" alt="Hardware badge with personality" />
   <img src="https://img.shields.io/badge/Code%20style-Core%20%2B%20Effects%20%2B%20App-334155?style=flat-square" alt="Core + Effects + App" />
 </p>
@@ -49,6 +49,7 @@ The goal is no longer a throwaway test sketch. It is now a compact hardware arti
 | Item | Status |
 | --- | --- |
 | Current deployed effect | Cat face + scrolling text |
+| Validation status | `make check` green |
 | Device target | `ESP32-S3-DevKitC-1` |
 | LED matrix | `WS2812B 8x8` |
 | Data pin | `GPIO38` |
@@ -63,11 +64,14 @@ flowchart LR
   B --> C["generated/project_content.h"]
   C --> D["ledmatrix8x8_app.h"]
   E["LedMatrixCore"] --> D
+  E2["LedMatrixFirmwareCommands"] --> D
+  E3["LedMatrixMessagePriority"] --> D
   F["LedMatrixEffect"] --> G["CatAnimationEffect"]
   H["LedMatrixText"] --> I["CatMessagePlaybackEffect"]
   G --> I
   I --> D
-  D --> J["ESP32-S3 + WS2812B 8x8"]
+  J["HomeAssistantTextClient"] --> D
+  D --> K["ESP32-S3 + WS2812B 8x8"]
 ```
 
 ## Project Chart
@@ -84,12 +88,16 @@ pie showData title Current project emphasis
 
 | Layer | Path | Responsibility |
 | --- | --- | --- |
-| App | `ledmatrix8x8_app.h` | Wires the selected effect into the runtime |
+| App | `ledmatrix8x8_app.h` | Wires the selected effect into the runtime; handles serial commands and HA callbacks |
 | Core | `lib/LedMatrixCore/src/LedMatrixCore.h` | Matrix abstraction, coordinates, color, draw helpers |
+| Color parser | `lib/LedMatrixCore/src/LedMatrixColorParser.h` | Parses `r,g,b` and `#RRGGBB` color strings |
+| Firmware commands | `lib/LedMatrixCore/src/LedMatrixFirmwareCommands.h` | Parses BRIGHTNESS/EFFECT commands; formats HA error summaries |
+| Message priority | `lib/LedMatrixCore/src/LedMatrixMessagePriority.h` | Resolves Serial > HomeAssistant > Config source priority |
 | Effect contract | `lib/LedMatrixEffects/src/LedMatrixEffect.h` | Common interface for importable effects |
 | Cat effect | `lib/LedMatrixEffects/src/CatAnimation.h` | Pixel cat animation library |
 | Text lib | `lib/LedMatrixText/src/TextMarquee.h` | 5x7 sprite marquee with editable message text |
 | Playback effect | `lib/LedMatrixEffects/src/CatMessagePlayback.h` | Alternates cat idle and scrolling messages |
+| HA client | `lib/LedMatrixIntegrations/src/HomeAssistantTextClient.h` | Polls HA REST API; manages Wi-Fi lifecycle |
 | Generated config | `generated/project_content.h` | Build-time constants generated from config |
 | Content source | `config.yaml` | Human-edited project config |
 
@@ -141,29 +149,41 @@ Example message:
 
 ## Serial Override
 
-Com o firmware rodando, voce pode trocar o letreiro sem reflash pelo monitor serial em `115200`:
+Com o firmware rodando, voce pode controlar tudo sem reflash pelo monitor serial em `115200`:
 
 ```text
 TEXT:Olá, eu sou o Klein
 COLOR:255,140,0
+BRIGHTNESS:80
+EFFECT:cat
+EFFECT:playback
 STATUS
 CLEAR
+HELP
 ```
 
 Regras:
 
-- `TEXT:` ativa um override temporario e passa a repetir essa mensagem no playback.
-- `COLOR:r,g,b` define a cor do proximo override; cada componente precisa estar entre `0` e `255`.
+- `TEXT:mensagem` ativa um override temporario e exibe essa mensagem no letreiro.
+- `COLOR:r,g,b` define a cor usada no proximo `TEXT:`; cada componente deve estar entre `0` e `255`.
+- `BRIGHTNESS:n` ajusta o brilho imediatamente (0–255) sem reflash.
+- `EFFECT:cat` troca para o modo so-gato (sem marquee). `EFFECT:playback` volta ao modo normal.
 - `CLEAR` remove o override manual. Se o Home Assistant tiver mensagem ativa, ele reassume com a cor HA atual; se nao tiver, volta para o `config.yaml`.
-- `STATUS` mostra fonte atual, override, cor serial, cor HA, Wi-Fi, IP, ultimo HTTP e ultimo poll.
-- O texto continua sendo normalizado para o charset suportado pela fonte 5x7.
+- `STATUS` mostra fonte atual, override, cor serial, cor HA, efeito ativo, brilho, Wi-Fi, IP, ultimo HTTP, ultimo erro e ultimo poll.
+- `HELP` lista todos os comandos disponiveis.
+- O texto e normalizado para o charset suportado pela fonte 5x7 (ASCII uppercase).
 
-Tambem existe o wrapper Python:
+Tambem existe o wrapper Python com auto-detect de porta:
 
 ```bash
 make status PORT=/dev/ttyACM0
-.venv/bin/python scripts/send.py --port /dev/ttyACM0 text --color 255,140,0 "Ola Klein"
-.venv/bin/python scripts/send.py --port /dev/ttyACM0 clear
+
+# ou via script direto (porta auto-detectada se omitida):
+.venv/bin/python scripts/send.py text --color 255,140,0 "Ola Klein"
+.venv/bin/python scripts/send.py brightness 80
+.venv/bin/python scripts/send.py effect cat
+.venv/bin/python scripts/send.py clear
+.venv/bin/python scripts/send.py --port /dev/ttyACM0 status
 ```
 
 ## Home Assistant
@@ -179,9 +199,9 @@ Arquivos:
 Configuracao local esperada:
 
 ```cpp
-#define LEDMATRIX_WIFI_SSID "Bitter"
-#define LEDMATRIX_WIFI_PASSWORD "..."
-#define LEDMATRIX_HA_BASE_URL "http://192.168.15.11:8123"
+#define LEDMATRIX_WIFI_SSID "nome_da_rede_wifi"
+#define LEDMATRIX_WIFI_PASSWORD "senha_wifi"
+#define LEDMATRIX_HA_BASE_URL "local_ip_home_assistant"
 #define LEDMATRIX_HA_ACCESS_TOKEN "SEU_LONG_LIVED_ACCESS_TOKEN"
 #define LEDMATRIX_HA_ENTITY_ID "input_text.ledmatrix8x8_message"
 #define LEDMATRIX_HA_COLOR_ENTITY_ID "input_text.ledmatrix8x8_color"
@@ -201,7 +221,6 @@ Observacoes:
 - Se o helper de mensagem ficar vazio, a matriz volta para o playback padrao do `config.yaml`.
 - Se o helper de cor ficar vazio, `unknown`, `unavailable` ou invalido, a matriz volta para a cor HA padrao do `config.yaml`.
 - `STATUS` e o log serial ajudam a diagnosticar Wi-Fi, HTTP e o ultimo estado recebido.
-- Tentei criar o helper remotamente, mas o usuario `homesystem` nao tem permissao de escrita em `/home/homesystem/homeassistant/configuration.yaml`.
 
 ## How To Swap The Active Effect
 
